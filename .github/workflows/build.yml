@@ -1,0 +1,81 @@
+name: Yayınla ve APK üret
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      apk:
+        description: "APK de üretilsin mi?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1) Uygulamanın içeriği: her push'ta GitHub Pages'e çıkar. Telefondaki uygulama bu adresi açtığı için
+  #    değişiklikler APK yeniden kurulmadan, uygulama bir sonraki açılışta görünür.
+  site:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  # 2) APK: yalnızca uygulama kabuğu değişince gerekir (ikon, ad, izinler, canlı adres).
+  #    Commit mesajında [apk] geçerse ya da Actions'tan elle çalıştırılırsa üretilir.
+  apk:
+    if: contains(github.event.head_commit.message, '[apk]') || (github.event_name == 'workflow_dispatch' && inputs.apk)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Canlı adresi yaz
+        run: |
+          URL="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
+          if [ -f CNAME ]; then URL="https://$(cat CNAME)/"; fi
+          sed -i "s#__LIVE_URL__#${URL}#" capacitor.config.json
+          echo "Uygulama şu adresi açacak: $URL"
+      - name: Android projesini oluştur
+        run: |
+          npm install
+          npx cap add android
+          npx cap sync android
+      - name: Sabit test imzası
+        run: |
+          mkdir -p ~/.android
+          cp ci/debug.keystore ~/.android/debug.keystore
+      - name: APK derle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Mixsos.apk
+      - name: "Sürümler sayfasına koy (indirme linki sabit kalır)"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Mixsos test sürümü
+          body: "Telefona kurmak için Mixsos.apk dosyasını indir. İçerik güncellemeleri uygulamaya otomatik gelir; bu dosyayı yalnızca yeni sürüm çıktığında tekrar kurman gerekir."
+          files: Mixsos.apk
+          make_latest: true

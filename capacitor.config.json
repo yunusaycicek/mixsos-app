@@ -1,0 +1,12 @@
+{
+  "appId": "com.mixsos.app",
+  "appName": "Mixsos",
+  "webDir": "www",
+  "server": {
+    "url": "__LIVE_URL__",
+    "cleartext": false
+  },
+  "android": {
+    "backgroundColor": "#C8102E"
+  }
+}

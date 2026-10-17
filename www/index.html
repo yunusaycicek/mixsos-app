@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C8102E">
+<link rel="icon" href="img/logo-red.png">
+<title>Mixsos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: tek sütun telefon kabı; masaüstünde ortalanmış 420px "cihaz", telefonda tam ekran. Marka tek tema (açık) — bilinçli seçim. */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --red:#C8102E; --red-deep:#B3192B; --red-soft:#FCE9EC;
+  --ink:#1C1C1E; --text:#1A1A1A; --muted:#6E6A6B; --line:#EEEAEA;
+  --surface:#FFFFFF; --bg:#F7F4F4; --stage:#1B0C0F;
+  --ok:#1C8F52; --ok-bg:#E2F5EA; --warn:#B26A00;
+  --font:"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--stage);color:var(--text);font-family:var(--font);margin:0;
+  padding-left:max(0px, env(safe-area-inset-left,0px));padding-right:max(0px, env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input{font:inherit}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.stage{height:100%;display:flex;justify-content:center;align-items:center;padding-block:12px}
+#app{position:relative;width:100%;max-width:420px;height:100%;max-height:880px;background:var(--bg);
+  overflow:hidden;display:flex;flex-direction:column;border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+@media (max-width:480px){.stage{padding-block:0}#app{max-height:none;border-radius:0;box-shadow:none}}
+#screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative}
+.pad{padding:0 16px}
+h1,h2,h3{margin:0;text-wrap:balance}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+/* Butonlar */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border-radius:26px;font-weight:600;font-size:15px}
+.btn-red{background:var(--red-deep);color:#fff}
+.btn-red:active{background:var(--red)}
+.btn-ink{background:var(--ink);color:#fff}
+.btn-ghost{border:1.5px solid var(--ink);color:var(--ink);background:var(--surface)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.powered{text-align:center;font-size:12px;color:var(--text);padding:10px 0 4px}
+.powered b{font-weight:800;letter-spacing:-.2px}
+
+/* Splash */
+.splash{height:100%;background:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative}
+.logo-img{display:block;width:auto;max-width:70%}
+.ob-hero img.photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ob-final .top img.photo{width:78%;max-width:300px;aspect-ratio:1;object-fit:cover;border-radius:24px;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.pic{width:100%;height:100%;object-fit:cover;display:block}
+.camp-hero{display:block;margin:0 16px 12px;border-radius:16px;overflow:hidden;aspect-ratio:1000/563;width:calc(100% - 32px);max-width:100%;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.poster{flex:none;width:40%;aspect-ratio:3/5;max-width:100%;border-radius:14px;overflow:hidden;scroll-snap-align:start;box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.camp-view{position:relative;background:#111;min-height:100%;display:flex;flex-direction:column}
+.camp-view img{width:100%;display:block}
+.camp-view .cta{position:sticky;bottom:0;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,rgba(0,0,0,.75) 30%);margin-top:auto}
+.camp-close{position:absolute;top:12px;left:12px;z-index:3;background:#fff;border-radius:20px;padding:7px 12px;font-weight:600;font-size:13px;display:flex;align-items:center;gap:2px}
+.logo{font-weight:800;letter-spacing:1px;color:#fff;display:inline-flex;align-items:flex-end;gap:1px}
+.logo .o{display:inline-flex;flex-direction:column;align-items:center}
+.logo .o i{display:block;width:.55em;height:.08em;background:#FFC20E;border-radius:2px;margin-top:.04em}
+.splash .powered{position:absolute;bottom:28px;left:0;right:0;color:#fff}
+
+/* Onboarding */
+.ob{height:100%;display:flex;flex-direction:column;background:var(--surface)}
+.ob-hero{position:relative;height:56%;background:radial-gradient(120% 90% at 50% 40%,#E3232F 0%,#B80F1E 70%,#8E0B17 100%);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ob-hero svg.art{width:78%;max-width:300px;height:auto;filter:drop-shadow(0 18px 24px rgba(0,0,0,.35))}
+.skip{position:absolute;top:16px;right:16px;background:#fff;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px;display:flex;gap:6px;align-items:center}
+.ob-body{flex:1;display:flex;flex-direction:column;padding:18px 16px 12px}
+.dots{display:flex;gap:4px;margin-bottom:14px}
+.dots span{height:5px;width:6px;border-radius:3px;background:#E3DCDD}
+.dots span.on{width:18px;background:var(--red)}
+.ob-body h1{font-size:25px;line-height:1.2;font-weight:800;margin-bottom:8px}
+.ob-body p{font-size:13.5px;line-height:1.55;color:var(--muted);margin:0}
+.ob-body .spacer{flex:1}
+.ob-final{height:100%;position:relative;background:radial-gradient(110% 70% at 50% 25%,#E3232F,#A80D1B 75%);display:flex;flex-direction:column}
+.ob-final .top{flex:1;display:flex;flex-direction:column;align-items:center;padding-top:28px;gap:18px}
+.ob-final .card{background:#fff;margin:0 12px 14px;border-radius:24px;padding:22px 16px 10px}
+.ob-final h1{font-size:24px;font-weight:800;line-height:1.2;margin-bottom:8px}
+.ob-final p{font-size:13px;color:var(--muted);line-height:1.55;margin:0 0 18px}
+.linkbtn{display:block;width:100%;text-align:center;padding:14px 0 4px;font-weight:600;font-size:14px}
+
+/* Login */
+.topbar{display:flex;align-items:center;gap:8px;height:52px;padding:0 12px;background:var(--surface);position:sticky;top:0;z-index:5;border-bottom:1px solid var(--line)}
+.topbar h2{flex:1;text-align:center;font-size:16px;font-weight:700;margin-right:52px}
+.back{display:flex;align-items:center;gap:2px;font-size:14px;color:var(--muted);width:60px}
+.form{padding:24px 16px;display:flex;flex-direction:column;gap:14px}
+.form h1{font-size:22px;font-weight:800}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.input{height:50px;border:1.5px solid var(--line);border-radius:14px;padding:0 14px;background:var(--surface);font-size:15px;color:var(--text);width:100%}
+.input:focus{border-color:var(--red);outline:none}
+.phone{display:flex;gap:8px}
+.phone .cc{width:70px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);font-weight:600}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.5}
+.demo-note{background:#FFF6E0;color:#6A4A00;border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.5}
+.otp{letter-spacing:12px;text-align:center;font-size:22px;font-weight:700}
+
+/* Home */
+.home-head{background:var(--red);color:#fff;padding:14px 16px 18px;border-radius:0 0 22px 22px}
+.hello{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.hello span{font-weight:600;font-size:14.5px}
+.roundbtn{width:34px;height:34px;border-radius:50%;background:#fff;color:var(--red);display:inline-flex;align-items:center;justify-content:center}
+.wallet{background:var(--surface);color:var(--text);border-radius:16px;padding:14px}
+.wallet.dark{background:var(--ink);color:#fff}
+.wallet .row{display:flex;justify-content:space-between;align-items:flex-start}
+.wallet small{font-size:11.5px;color:var(--muted)}
+.wallet.dark small{color:#BDB8B9}
+.lvl{font-size:11px;font-weight:600;background:#EFEDED;border-radius:8px;padding:4px 8px;display:inline-flex;gap:4px;align-items:center;color:var(--text)}
+.wallet.dark .lvl{background:#3A3A3C;color:#fff}
+.bal{font-size:26px;font-weight:800;margin:4px 0 8px}
+.bonus{display:flex;align-items:center;gap:6px;font-size:12px}
+.bonus b{background:var(--red);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
+.topup{background:var(--ink);color:#fff;border-radius:18px;padding:9px 16px;font-size:13px;font-weight:600}
+.wallet.dark .topup{background:#fff;color:var(--ink);width:100%;margin-top:10px;padding:12px}
+.loyal{margin:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px}
+.loyal h3{font-size:14.5px;font-weight:700;line-height:1.35}
+.loyal .gift{display:flex;gap:6px;align-items:center;font-size:12px;margin-top:10px}
+.ring{position:relative;width:64px;height:64px;flex:none}
+.ring svg{width:64px;height:64px;transform:rotate(-90deg)}
+.ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-title{font-size:16px;font-weight:700;padding:6px 16px 10px}
+.hscroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 14px;scroll-snap-type:x mandatory}
+.hscroll::-webkit-scrollbar{display:none}
+.banner{flex:none;width:78%;height:130px;border-radius:16px;scroll-snap-align:start;position:relative;overflow:hidden;color:#fff;padding:14px;display:flex;flex-direction:column;justify-content:flex-end;text-align:left}
+.banner .big{font-size:34px;font-weight:800;line-height:1}
+.banner .t{font-size:13px;font-weight:600}
+.banner svg{position:absolute;right:-6px;top:6px;width:52%;height:auto}
+.tile{flex:none;width:44%;border-radius:16px;background:var(--surface);border:1px solid var(--line);overflow:hidden;scroll-snap-align:start;text-align:left}
+.tile .img{height:110px;background:linear-gradient(160deg,#F7C230,#E8A20C);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tile .img svg{height:84px;width:auto}
+.tile div.c{padding:8px 10px 10px;font-size:13px;font-weight:600}
+.tile div.c small{display:block;color:var(--muted);font-weight:500;margin-top:2px}
+
+/* Menu */
+.search{margin:10px 16px;height:44px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--muted)}
+.search input{border:0;outline:0;flex:1;background:transparent;font-size:14px;color:var(--text)}
+.cats{display:flex;gap:18px;overflow-x:auto;padding:0 16px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:4}
+.cats::-webkit-scrollbar{display:none}
+.cats button{flex:none;padding:10px 0;font-size:13px;color:var(--muted);border-bottom:2.5px solid transparent;font-weight:500}
+.cats button.on{color:var(--text);border-color:var(--red);font-weight:700}
+.msec h3{font-size:16px;font-weight:800;padding:16px 16px 4px}
+.item{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface);width:100%;text-align:left;align-items:center}
+.item .txt{flex:1;min-width:0}
+.item h4{margin:0 0 4px;font-size:14px;font-weight:700}
+.item p{margin:0 0 8px;font-size:11.5px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.item .pr{font-weight:700;font-size:14px}
+.item .ph{width:96px;height:80px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:12px;background:#FBF3F3;overflow:hidden}
+.item .ph svg{width:88px;height:auto}
+.fab{position:absolute;left:12px;right:12px;bottom:88px;background:var(--ink);color:#fff;border-radius:18px;padding:10px 14px 10px 10px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:20;text-align:left}
+.fab .ic{width:38px;height:38px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex:none}
+.fab b{display:block;font-size:14.5px}
+.fab small{font-size:11px;color:#C9C4C5}
+.fab .amt{margin-left:auto;font-weight:700}
+
+/* Product */
+.p-hero{height:230px;background:var(--surface);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line)}
+.p-hero svg{height:190px;width:auto}
+.p-hero img{width:100%;height:100%;object-fit:cover}
+.p-hero{overflow:hidden}
+.p-head{background:var(--surface);padding:14px 16px;border-bottom:1px solid var(--line)}
+.p-head .r{display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:16px}
+.p-head p{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
+.acc{background:var(--surface);border-bottom:1px solid var(--line)}
+.acc summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;font-weight:600;font-size:13.5px;cursor:pointer}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary small{color:var(--muted);font-weight:500;margin-left:4px}
+.acc[open] summary svg{transform:rotate(180deg)}
+.acc .in{padding:0 16px 14px;font-size:12.5px;color:var(--muted);line-height:1.6}
+.nut{display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.grp{background:var(--surface);margin-top:8px}
+.grp .gh{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 6px}
+.grp .gh b{font-size:14px}
+.grp .gh small{display:block;color:var(--muted);font-size:11.5px;font-weight:500}
+.tag{font-size:10.5px;font-weight:700;border-radius:6px;padding:4px 7px;background:var(--ink);color:#fff}
+.tag.opt{background:#EFEDED;color:var(--muted)}
+.tag.err{background:var(--red)}
+.opt{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-top:1px solid var(--line);width:100%;font-size:13.5px;font-weight:500;text-align:left}
+.opt .x{color:var(--muted);font-size:12.5px;margin-right:10px}
+.radio{width:20px;height:20px;border-radius:50%;border:1.5px solid #CFC9CA;flex:none;display:inline-flex;align-items:center;justify-content:center}
+.radio.sq{border-radius:6px}
+.on .radio{border-color:var(--ink);background:var(--ink);box-shadow:inset 0 0 0 4px #fff}
+.on .radio.sq{box-shadow:none}
+.on .radio.sq::after{content:"";width:9px;height:5px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.bottombar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;align-items:center;z-index:6}
+.stepper{display:flex;align-items:center;gap:12px;font-weight:700}
+.stepper button{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center}
+.stepper button.lite{background:transparent;color:var(--ink)}
+.bottombar .btn{flex:1}
+
+/* Cart */
+.card{background:var(--surface);border-radius:16px;margin:12px 16px;padding:14px;border:1px solid var(--line)}
+.cline{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.cline:last-child{border-bottom:0;padding-bottom:0}
+.cline:first-child{padding-top:0}
+.cline .ph{width:56px;height:56px;border-radius:10px;background:#FBF3F3;display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden}
+.cline .ph svg{width:52px;height:auto}
+.cline .t{flex:1;min-width:0}
+.cline h4{margin:0;font-size:13.5px}
+.cline p{margin:3px 0 8px;font-size:11.5px;color:var(--muted);line-height:1.4}
+.cline .r{display:flex;justify-content:space-between;align-items:center}
+.cline .stepper{gap:10px}
+.cline .stepper button{width:26px;height:26px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#F0ECEC;border-radius:14px;padding:4px;gap:4px}
+.seg button{height:40px;border-radius:10px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.kv{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0}
+.kv.total{font-weight:800;font-size:16px;border-top:1px dashed var(--line);margin-top:6px;padding-top:12px}
+.coupon{display:flex;gap:8px}
+.coupon .input{height:44px}
+.coupon button{flex:none;padding:0 16px;border-radius:12px;background:var(--ink);color:#fff;font-weight:600;font-size:13px}
+.empty{padding:60px 24px;text-align:center;color:var(--muted)}
+.empty h3{color:var(--text);margin-bottom:6px}
+
+/* Checkout */
+.paywith{display:flex;flex-direction:column;gap:8px}
+.paywith .opt{border:1.5px solid var(--line);border-radius:14px;padding:14px}
+.paywith .opt.on{border-color:var(--ink)}
+.cardviz{height:150px;border-radius:18px;background:linear-gradient(135deg,#2B2B2E,#111);color:#fff;padding:18px;display:flex;flex-direction:column;justify-content:space-between;font-variant-numeric:tabular-nums}
+.cardviz .no{font-size:18px;letter-spacing:2px;font-weight:600}
+.cardviz .bt{display:flex;justify-content:space-between;font-size:12px;color:#CFCACB}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.secure{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);justify-content:center}
+
+/* Tracking */
+.track{display:flex;flex-direction:column;gap:0}
+.tstep{display:flex;gap:12px;position:relative;padding-bottom:20px}
+.tstep:last-child{padding-bottom:0}
+.tstep .dot{width:28px;height:28px;border-radius:50%;background:#EFEDED;color:#fff;display:flex;align-items:center;justify-content:center;flex:none;z-index:1}
+.tstep.done .dot{background:var(--ok)}
+.tstep.cur .dot{background:var(--red);animation:pulse 1.4s infinite}
+.tstep::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:#EFEDED}
+.tstep.done::before{background:var(--ok)}
+.tstep:last-child::before{display:none}
+.tstep b{display:block;font-size:14px}
+.tstep small{color:var(--muted);font-size:12px}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(200,16,46,.45)}70%{box-shadow:0 0 0 10px rgba(200,16,46,0)}100%{box-shadow:0 0 0 0 rgba(200,16,46,0)}}
+.okhead{text-align:center;padding:24px 16px 8px}
+.okhead .big{width:64px;height:64px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px}
+.okhead h1{font-size:20px;font-weight:800}
+
+/* QR */
+.qrbox{background:var(--surface);border:1px solid var(--line);border-radius:22px;margin:14px 16px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.qrbox canvas{width:180px;height:180px;image-rendering:pixelated}
+.timer{display:flex;align-items:center;gap:6px;background:#F3F0F0;border-radius:14px;padding:5px 12px;font-size:12.5px;font-weight:600}
+.codebox{width:100%;background:#F6F3F3;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.codebox span.m{font-weight:800;letter-spacing:3px}
+
+/* Branches */
+.br{display:flex;gap:12px;align-items:center;background:var(--surface);padding:14px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.br .thumb{width:62px;height:62px;border-radius:12px;flex:none;background:linear-gradient(160deg,#3A1418,#7A1420);display:flex;align-items:flex-end;justify-content:center;color:#fff;font-size:9px;font-weight:800;padding-bottom:8px}
+.br h4{margin:0 0 3px;font-size:14px}
+.br p{margin:0;font-size:12px;color:var(--muted);line-height:1.4}
+.open{font-size:11px;font-weight:700;color:var(--ok);background:var(--ok-bg);padding:3px 8px;border-radius:8px}
+.closed{font-size:11px;font-weight:700;color:var(--muted);background:#EFEDED;padding:3px 8px;border-radius:8px}
+.bd-img{height:150px;margin:12px 16px 0;border-radius:16px;background:linear-gradient(170deg,#2B0E12,#8E1220 70%,#C8102E);display:flex;align-items:center;justify-content:center}
+.facts{display:flex;flex-direction:column;gap:10px;font-size:13px}
+.facts div{display:flex;gap:10px;align-items:center}
+.hours .kv{font-size:13px}
+
+/* Profile */
+.prof{display:flex;gap:12px;align-items:center}
+.avatar{width:52px;height:52px;border-radius:50%;background:var(--red-soft);color:var(--red);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+.menu-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);width:100%;font-size:14px;font-weight:500;text-align:left}
+.menu-row:last-child{border-bottom:0}
+
+/* Tabbar */
+#tabbar{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));height:66px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-radius:24px;box-shadow:0 8px 28px rgba(60,10,15,.16);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;z-index:30}
+#tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#9B9596;font-weight:600}
+#tabbar button.on{color:var(--ink)}
+#tabbar .qr{width:52px;height:52px;border-radius:50%;background:var(--red);color:#fff;justify-content:center;margin:0 auto;box-shadow:0 6px 16px rgba(200,16,46,.4)}
+.withnav{padding-bottom:96px}
+
+/* Sheet & toast */
+.scrim{position:absolute;inset:0;background:rgba(20,8,10,.45);z-index:40;display:flex;align-items:flex-end}
+.sheet{background:var(--surface);width:100%;border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.sheet h3{font-size:17px;font-weight:800}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chips button{height:46px;border-radius:12px;border:1.5px solid var(--line);font-weight:700}
+.chips button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+#toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:14px;font-size:13px;font-weight:600;z-index:60;max-width:88%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.badge{position:absolute;top:-4px;right:-6px;background:var(--red);color:#fff;font-size:9.5px;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.relative{position:relative}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="stage"><div id="app"><main id="screen"></main><nav id="tabbar" hidden></nav><div id="toast" hidden></div></div></div>
+
+<script>
+// ---------- İkonlar ----------
+const I = {
+  arrow:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  back:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>',
+  home:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 7.5V20a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1v-9.5z"/></svg>',
+  book:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5c3-1 6-1 8.2.8V20C9 18.4 6 18.3 3 19.2zM21 5c-3-1-6-1-8.2.8V20c2.2-1.6 5.2-1.7 8.2-.8z"/></svg>',
+  qr:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.3"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.3"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.3"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM14 19h1M19 14h1.5"/></svg>',
+  pin:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7zm0 4.5A2.5 2.5 0 1012 11.5 2.5 2.5 0 0012 6.5z"/></svg>',
+  user:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c.6-4.6 4-7 8.5-7s7.9 2.4 8.5 7z"/></svg>',
+  bell:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20.5a2 2 0 004 0"/></svg>',
+  plus:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  minus:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+  trash:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>',
+  chev:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>',
+  right:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
+  cart:'<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M3 4h2.2l2.2 10.2a1.5 1.5 0 001.5 1.2h8.6a1.5 1.5 0 001.4-1.1L21 7.5H6.4"/><circle cx="9.5" cy="19.5" r="1.6"/><circle cx="17" cy="19.5" r="1.6"/></svg>',
+  check:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  eye:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  wifi:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>',
+  park:'<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M10 17V7h3a3 3 0 010 6h-3" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+  smoke:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15h14v3H3zM19 15v3M21.5 15v3M18 12c0-2 2-2 2-4"/></svg>',
+  plug:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 9v3M14 9v3"/></svg>',
+  gift:'<svg width="16" height="16" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="6" fill="#C8102E"/><path d="M6 11h12v7H6zM5 8h14v3H5zM12 8v10M12 8c-1-3-4-3-4-1s4 1 4 1 4 1 4-1-3-2-4 1" fill="none" stroke="#fff" stroke-width="1.5"/></svg>',
+  lock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>',
+  diamond:'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21L3 9l3-5h12l3 5z"/></svg>'
+};
+
+// ---------- Yemek illüstrasyonları (gerçek görseller gelene kadar) ----------
+const ART = {
+  wrap:`<svg viewBox="0 0 200 140" class="art"><g transform="rotate(-18 100 70)"><rect x="18" y="44" width="150" height="52" rx="26" fill="#E8B26A"/><rect x="18" y="44" width="150" height="52" rx="26" fill="url(#g1)"/>${[40,62,84,106,128,150].map(x=>`<path d="M${x} 46q-8 24 0 48" stroke="#A8472A" stroke-width="5" fill="none" opacity=".8"/>`).join('')}<ellipse cx="164" cy="70" rx="16" ry="26" fill="#F2C46B"/><circle cx="160" cy="58" r="6" fill="#C9662C"/><circle cx="168" cy="74" r="7" fill="#E9893A"/><circle cx="158" cy="82" r="5" fill="#6BB33E"/><rect x="152" y="64" width="20" height="4" rx="2" fill="#F7D24B"/></g><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs></svg>`,
+  burger:`<svg viewBox="0 0 200 160" class="art"><path d="M30 78a70 52 0 01140 0z" fill="#E09A3E"/><path d="M30 78a70 52 0 01140 0" fill="none" stroke="#C47C26" stroke-width="3"/>${[[70,45],[95,38],[120,46],[84,60],[110,58],[140,62],[58,64]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="3.5" ry="2" fill="#FFF3D6"/>`).join('')}<path d="M24 84h152l-8 8H32z" fill="#6BB33E"/><rect x="28" y="90" width="144" height="10" rx="4" fill="#E2462E"/><path d="M26 100h148l-14 12-12-8-14 10-14-9-14 10-14-10-14 9-14-10-14 8z" fill="#F7C230"/><rect x="28" y="106" width="144" height="18" rx="8" fill="#6B3420"/><path d="M30 126h140a6 6 0 01-6 16H36a6 6 0 01-6-16z" fill="#D88A34"/></svg>`,
+  box:`<svg viewBox="0 0 200 170" class="art"><path d="M40 30l40 10 40-10 40 10-8 20H48z" fill="#fff" opacity=".9"/><path d="M50 40c20-14 80-14 100 0l-6 18H56z" fill="#F2C46B"/>${[[70,36],[92,30],[118,34],[136,40],[82,46],[106,44]].map(([x,y])=>`<rect x="${x}" y="${y}" width="22" height="10" rx="5" fill="#C9662C" transform="rotate(${(x%3)*10-10} ${x} ${y})"/>`).join('')}<path d="M44 56h112l-12 104H56z" fill="#D4141F"/><path d="M44 56h112l-3 18H47z" fill="#B30F19"/><text x="100" y="112" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="800" font-size="20" fill="#fff">MIXSOS</text><circle cx="100" cy="134" r="8" fill="none" stroke="#FFC20E" stroke-width="3"/><rect x="94" y="146" width="12" height="3" rx="1.5" fill="#FFC20E"/></svg>`,
+  fries:`<svg viewBox="0 0 160 170" class="art">${[46,58,70,82,94,106,52,76,100].map((x,i)=>`<rect x="${x}" y="${18+(i%4)*8}" width="9" height="80" rx="3" fill="${i%2?'#F7C230':'#F2B51B'}" transform="rotate(${(i%5-2)*5} ${x} 90)"/>`).join('')}<path d="M36 70h88l-10 92H46z" fill="#fff"/><path d="M36 70h88l-2 14H38z" fill="#EDE6E6"/><text x="80" y="124" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="800" font-size="14" fill="#C8102E">MIXSOS</text></svg>`,
+  drink:`<svg viewBox="0 0 120 170" class="art"><rect x="28" y="20" width="64" height="140" rx="12" fill="#0E3E9B"/><rect x="28" y="20" width="64" height="14" rx="7" fill="#B9C2D3"/><rect x="28" y="146" width="64" height="14" rx="7" fill="#B9C2D3"/><circle cx="60" cy="88" r="20" fill="#fff"/><path d="M40 88a20 20 0 0140 0z" fill="#E1261C"/><path d="M40 90q20-10 40 0" stroke="#0E3E9B" stroke-width="4" fill="none"/><rect x="36" y="40" width="6" height="96" rx="3" fill="#fff" opacity=".2"/></svg>`,
+  rings:`<svg viewBox="0 0 160 130" class="art">${[[56,60],[100,54],[78,86]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="26" fill="none" stroke="#E2A040" stroke-width="16"/><circle cx="${x}" cy="${y}" r="26" fill="none" stroke="#C47C26" stroke-width="2" stroke-dasharray="3 5"/>`).join('')}</svg>`
+};
+
+// ---------- Veri (demo) ----------
+const DRINK={id:'drink',name:'İçecek Seçimi',req:true,max:1,opts:[['Pepsi (33 cl.)',0],['Pepsi Zero Sugar (33 cl.)',0],['Yedigün (33 cl.)',0],['Lipton Ice Tea (33 cl.)',0],['Ayran',0]]};
+const FRIES={id:'fries',name:'Patates Boyu',req:true,max:1,opts:[['Küçük boy',0],['Büyük boy',40]]};
+const SOS={id:'sos',name:'Ekstra Sos',req:false,max:3,opts:[['Mixsos Sos',20],['Acı Sos',20],['Ranch Sos',25],['Barbekü Sos',20]]};
+const SIZE={id:'size',name:'Porsiyon',req:true,max:1,opts:[['Normal',0],['Large',40]]};
+const CATS=[['kamp','Dev Kampanya'],['durum','Dürümler'],['burger','Burgerler'],['box','Box & Makarna'],['yan','Atıştırmalıklar'],['icecek','İçecekler']];
+// img: kampanya görsellerinden kırpılan gerçek fotoğraflar. img'si olmayanlar mixsos.com görselleri eklenene kadar çizimle gösterilir.
+// fiyat: kampanya görsellerindekiler gerçek; diğerleri örnek (Firestore'a girilince güncellenir).
+const P=[
+ {id:'kebabi-menu',cats:['kamp'],name:'Kebabı + İçecek Menü',price:150,img:'kebabi-menu',art:'wrap',badge:'Yeni',desc:'Sumaklı soğanla geleneksel tat. Kebabı dürüm + içecek.',groups:[DRINK,SOS],al:4},
+ {id:'hatay',cats:['kamp','durum'],name:'Hatay Usulü Soslu Döner',price:100,img:'hatay-doner',art:'wrap',from:true,desc:'Hatay usulü soslu tavuk döner, çıtır patates ve mayonez.',groups:[SIZE,SOS],al:4},
+ {id:'chicken',cats:['kamp','burger'],name:'Chicken Burger',price:90,img:'chicken-burger',art:'burger',desc:'Çıtır tavuk köfte, marul, mayonez, ketçap.',groups:[SOS],al:5},
+ {id:'efsane',cats:['kamp','burger'],name:'Efsane Burger',price:110,art:'burger',desc:'Mixsos’un efsane burgeri.',groups:[SOS],al:5},
+ {id:'doner-box',cats:['kamp','box'],name:'Yoğurt Soslu Döner Box',price:180,img:'doner-box',art:'box',desc:'Tavuk döner, yeşillik, patates ve yoğurt sos, kutuda.',groups:[DRINK,SOS],al:3},
+ {id:'pesto',cats:['kamp','box'],name:'Pesto Soslu Dönerli Makarna',price:190,img:'pesto-makarna',art:'box',desc:'Pesto soslu makarna üzerinde tavuk döner.',groups:[DRINK],al:3},
+ {id:'kebabi-durum',cats:['durum'],name:'Kebabı Dürüm',price:120,img:'kebabi',art:'wrap',badge:'Yeni',desc:'Sumaklı soğan, domates, maydanoz, patates. Lezzetin en doğal hali.',groups:[SIZE,SOS],al:4},
+ {id:'cheddar',cats:['durum'],name:'Cheddarlı Dürüm',price:140,art:'wrap',desc:'Cheddar peyniri, çıtır patates ve soslar.',groups:[SIZE,SOS],al:5},
+ {id:'chilli',cats:['durum'],name:'Chilli Dürüm',price:130,art:'wrap',desc:'Acı sos, yeşillik ve çıtır patates.',groups:[SIZE,SOS],al:4},
+ {id:'burrito',cats:['durum'],name:'Burrito Menü',price:200,art:'wrap',desc:'Burrito ve soğuk içecek.',groups:[DRINK],al:4},
+ {id:'kids',cats:['burger'],name:'Kids Burger',price:95,art:'burger',desc:'Küçük misafirlerimiz için Mixsos burger.',groups:[DRINK],al:5},
+ {id:'kova',cats:['yan'],name:'Kova Patates',price:120,art:'fries',desc:'Paylaşmalık kovada çıtır patates.',groups:[SOS],al:0},
+ {id:'patates',cats:['yan'],name:'Patates Kızartması',price:60,art:'fries',desc:'Çıtır patates kızartması.',groups:[FRIES],al:0},
+ {id:'pepsi',cats:['icecek'],name:'Pepsi (33 cl.)',price:45,art:'drink',desc:'Kutu içecek.',groups:[],al:0},
+ {id:'ayran',cats:['icecek'],name:'Ayran',price:35,art:'drink',desc:'Şişe ayran.',groups:[],al:1}
+];
+const DONER_IDS=['kebabi-menu','hatay','doner-box','kebabi-durum','cheddar','chilli'];
+const CAMPS=[
+ {id:'c6',img:'k6',pid:'kebabi-menu',wide:true},{id:'c5',img:'k5',pid:'kebabi-durum'},{id:'c3',img:'k3',pid:'hatay'},
+ {id:'c2',img:'k2',pid:'chicken'},{id:'c1',img:'k1',pid:'doner-box'},{id:'c4',img:'k4',pid:'pesto'}
+];
+function pic(p){return p.img?`<img class="pic" src="img/${p.img}.jpg" alt="${esc(p.name)}" loading="lazy">`:ART[p.art]}
+const BR=[
+ {id:'b1',name:'Kadıköy Şubesi',km:'14.3 km',addr:'Osmanağa, Halitağa Cd. no:7c, 34734 Kadıköy/İstanbul',tel:'+905068435421',open:true},
+ {id:'b2',name:'Örnek Şube 2',km:'18.9 km',addr:'Demo verisi — gerçek şubeler Firestore’dan gelecek',tel:'—',open:true},
+ {id:'b3',name:'Örnek Şube 3',km:'27.1 km',addr:'Demo verisi — gerçek şubeler Firestore’dan gelecek',tel:'—',open:false}
+];
+const COUPONS={MIXSOS10:{type:'pct',v:10,label:'%10 indirim'},HOSGELDIN50:{type:'amt',v:50,label:'₺50 indirim'}};
+const OB=[
+ {img:'pesto-makarna',art:'box',t:'Farklı Bir Lezzet Deneyimi!',d:'Mixsos’a özel tarifleri ve eşsiz lezzetleriyle her öğüne farklı bir tat kat.'},
+ {img:'kebabi-menu',art:'wrap',t:'Kampanyalarla Daha Fazla Lezzet!',d:'Mixsos’e özel kampanyaları keşfet, avantajlı fırsatları yakala ve favori lezzetlerinin tadını çıkar.'},
+ {img:'chicken-burger',art:'burger',t:'Favori Lezzetlerin Bir Arada',d:'Burgerlerden dürümlere, çıtır pateteslerden özel lezzetlere kadar aradığın her şey Mixsos’da'}
+];
+
+// ---------- Durum ----------
+const S={screen:'splash',ob:0,user:null,phone:'',otpSent:false,cart:[],coupon:null,mode:'gelal',branch:BR[0],
+  cat:'kamp',q:'',cid:null,pid:null,sel:{},qty:1,payMethod:'card',card:{name:'',no:'',exp:'',cvc:''},pay:null,orders:[],balance:0,bonus:0,stamps:3,topup:250,sheet:null,showCode:false};
+const fmt=n=>'₺'+n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const prod=id=>P.find(p=>p.id===id);
+const $=s=>document.querySelector(s);
+let timers=[];
+function clearTimers(){timers.forEach(clearInterval);timers=[]}
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2200)}
+function go(screen,extra){Object.assign(S,extra||{});S.screen=screen;S.sheet=null;render();$('#screen').scrollTop=0}
+
+function logo(size){return `<img class="logo-img" src="img/logo-white.png" alt="Mixsos" style="height:${size*1.6}px">`}
+function powered(){return `<div class="powered">Powered by <b>Lokus Studio</b></div>`}
+
+// ---------- Fiyat ----------
+function unitPrice(p,sel){let t=p.price;p.groups.forEach(g=>(sel[g.id]||[]).forEach(i=>t+=g.opts[i][1]));return t}
+function cartTotals(){
+  const sub=S.cart.reduce((a,l)=>a+l.unit*l.qty,0);
+  let disc=0;if(S.coupon){const c=COUPONS[S.coupon];disc=c.type==='pct'?Math.round(sub*c.v)/100:Math.min(c.v,sub)}
+  const total=Math.max(0,sub-disc);const kdv=Math.round(total/1.10*0.10*100)/100;
+  return {sub,disc,total,kdv,count:S.cart.reduce((a,l)=>a+l.qty,0)};
+}
+
+// ---------- Ekranlar ----------
+const V={};
+V.splash=()=>`<div class="splash">${logo(46)}${powered()}</div>`;
+V.onboarding=()=>{
+  if(S.ob<3){const o=OB[S.ob];return `<div class="ob"><div class="ob-hero"><img class="photo" src="img/${o.img}.jpg" alt=""><button class="skip" data-a="obskip">Geç ${I.arrow}</button></div>
+  <div class="ob-body"><div class="dots">${[0,1,2].map(i=>`<span class="${i===S.ob?'on':''}"></span>`).join('')}</div>
+  <h1>${o.t}</h1><p>${o.d}</p><div class="spacer"></div>
+  <button class="btn btn-red" data-a="obnext">${S.ob===2?'Bitir':'Devam'}</button>${powered()}</div></div>`}
+  return `<div class="ob-final"><div class="top">${logo(34)}<img class="photo" src="img/hatay-doner.jpg" alt=""></div>
+  <div class="card"><h1>Lezzet Bir Dokunuş Uzağında</h1><p>Mixsos uygulamasıyla menüyü keşfet, favorilerini seç ve lezzet dolu deneyimini kolayca başlat.</p>
+  <button class="btn btn-red" data-a="tologin">Giriş yap ya da kayıt ol</button>
+  <button class="linkbtn" data-a="guest">Giriş yapmadan devam et</button>${powered()}</div></div>`;
+};
+V.login=()=>`<div class="topbar"><button class="back" data-a="loginback">${I.back}Geri</button><h2>Giriş yap</h2></div>
+ <form class="form" id="loginForm">
+  ${!S.otpSent?`<h1>Telefon numaranla devam et</h1><p class="hint">Hesabın yoksa otomatik oluşturulur. Numarana tek kullanımlık bir doğrulama kodu göndereceğiz.</p>
+  <label class="f">Cep telefonu<div class="phone"><span class="cc">+90</span><input class="input num" id="phone" inputmode="numeric" maxlength="13" placeholder="5xx xxx xx xx" value="${esc(S.phone)}" autocomplete="tel-national"></div></label>
+  <button class="btn btn-red" type="submit">Kod gönder</button>`
+  :`<h1>Doğrulama kodu</h1><p class="hint">+90 ${esc(S.phone)} numarasına gönderilen 6 haneli kodu gir.</p>
+  <div class="demo-note">Demo: SMS gönderilmez. Kod <b>123456</b>. Canlıda Firebase Phone Auth ile gerçek SMS gider.</div>
+  <input class="input otp num" id="otp" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code">
+  <label class="f">Adın (yeni hesap için)<input class="input" id="uname" placeholder="Örn. Hasan" maxlength="24"></label>
+  <button class="btn btn-red" type="submit">Doğrula ve devam et</button>
+  <button class="linkbtn" type="button" data-a="changephone">Numarayı değiştir</button>`}
+ </form>`;
+
+V.home=()=>{const n=S.user?S.user.name:'Misafir';const pct=S.stamps/10;const C=2*Math.PI*26;
+ return `<div class="withnav"><div class="home-head"><div class="hello"><span>Hoş geldiniz 👋 ${esc(n)}</span><div style="display:flex;gap:8px"><button class="roundbtn" aria-label="Bildirimler" data-a="notif">${I.bell}</button><button class="roundbtn" aria-label="Profil" data-tab="profile">${I.user.replace('22','17').replace('22','17')}</button></div></div>
+ ${walletCard(false)}</div>
+ <div class="loyal"><div style="flex:1"><h3>10 Tavuk Döner siparişine, 1 Tavuk Döner Bizden!</h3><div class="gift">${I.gift}<span>${S.stamps>=10?'1 adet hediyen var':'0 adet hediyen var'}</span></div></div>
+ <div class="ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" stroke="#F1ECEC" stroke-width="6" fill="none"/><circle cx="32" cy="32" r="26" stroke="#C8102E" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="${C*pct} ${C}"/></svg><span class="num">${S.stamps} / 10</span></div></div>
+ <div class="sec-title">Kampanyalar</div>
+ <button class="camp-hero" data-a="opencamp" data-v="c6"><img class="pic" src="img/k6.jpg" alt="Kebabı + İçecek 150 TL"></button>
+ <div class="hscroll">${CAMPS.filter(c=>!c.wide).map(c=>`<button class="poster" data-a="opencamp" data-v="${c.id}"><img class="pic" src="img/${c.img}.jpg" alt="${esc(prod(c.pid).name)} kampanyası" loading="lazy"></button>`).join('')}</div>
+ <div class="sec-title">Mixsos'dan</div>
+ <div class="hscroll">${['kebabi-durum','doner-box','pesto','chicken','hatay'].map(id=>{const p=prod(id);return `<button class="tile" data-a="openp" data-v="${id}"><div class="img">${pic(p)}</div><div class="c">${esc(p.name)}<small class="num">${fmt(p.price)}</small></div></button>`}).join('')}</div>
+ </div>`};
+function walletCard(dark){return `<div class="wallet ${dark?'dark':''}"><div class="row"><small>Mevcut Bakiyem</small><span class="lvl">${I.diamond} Başlangıç Seviyesi</span></div>
+ <div class="row" style="align-items:flex-end"><div><div class="bal num">${fmt(S.balance).replace(',00',',00')}</div><div class="bonus"><b>Bonus</b><span class="num">${fmt(S.bonus)}</span></div></div>${dark?'':'<button class="topup" data-a="topup">Bakiye yükle</button>'}</div>
+ ${dark?'<button class="topup" data-a="topup">Bakiye yükle</button>':''}</div>`}
+
+V.menu=()=>{const q=S.q.trim().toLocaleLowerCase('tr');const t=cartTotals();
+ const list=CATS.map(([id,name])=>{const items=P.filter(p=>p.cats.includes(id)&&(!q||p.name.toLocaleLowerCase('tr').includes(q)));if(!items.length)return '';
+  return `<div class="msec" id="sec-${id}"><h3>${name} <small class="muted">(${items.length})</small></h3>${items.map(p=>`<button class="item" data-a="openp" data-v="${p.id}"><div class="txt"><h4>${esc(p.name)}</h4><p>${esc(p.desc)}</p><div class="pr num">${p.from?'<small class="muted" style="font-weight:500">başlayan </small>':''}${fmt(p.price)}${p.badge?` <span class="tag" style="background:var(--red);margin-left:6px">${p.badge}</span>`:''}</div></div><div class="ph">${pic(p)}</div></button>`).join('')}</div>`}).join('');
+ return `<div class="withnav" style="padding-bottom:170px"><div class="topbar" style="position:static;border:0"><h2 style="margin:0">Menü</h2></div>
+ <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="q" placeholder="Menüde ara" value="${esc(S.q)}"></div>
+ <div class="cats">${CATS.map(([id,n])=>`<button class="${S.cat===id?'on':''}" data-a="cat" data-v="${id}">${n}</button>`).join('')}</div>
+ ${list||'<div class="empty"><h3>Sonuç yok</h3>Başka bir kelime dene.</div>'}</div>
+ <button class="fab" data-a="tocart"><span class="ic">${I.cart}</span><span><b>${t.count?'Sepete Git':'Sipariş Oluştur'}</b><small>${t.count?t.count+' ürün · '+S.branch.name:'Hemen sipariş ver, size en uygun yöntemle teslim alın!'}</small></span>${t.count?`<span class="amt num">${fmt(t.total)}</span>`:''}</button>`};
+
+V.product=()=>{const p=prod(S.pid);const u=unitPrice(p,S.sel);
+ const grp=p.groups.map(g=>{const s=S.sel[g.id]||[];const miss=S._tried&&g.req&&!s.length;
+  return `<div class="grp" id="g-${g.id}"><div class="gh"><div><b>${g.name}</b><small>${g.max>1?'En fazla '+g.max+' seçim':'1 seçim'}</small></div><span class="tag ${g.req?(miss?'err':''):'opt'}">${g.req?'Zorunlu':'İsteğe bağlı'}</span></div>
+  ${g.opts.map((o,i)=>`<button class="opt ${s.includes(i)?'on':''}" data-a="pick" data-g="${g.id}" data-i="${i}"><span>${o[0]}</span><span style="display:flex;align-items:center">${o[1]?`<span class="x num">+${fmt(o[1])}</span>`:''}<span class="radio ${g.max>1?'sq':''}"></span></span></button>`).join('')}</div>`}).join('');
+ return `<div class="topbar"><button class="back" data-a="back">${I.back}Geri</button><h2>Ürün Detayı</h2></div>
+ <div class="p-hero">${pic(p)}</div>
+ <div class="p-head"><div class="r"><span>${esc(p.name)}</span><span class="num">${fmt(p.price)}</span></div><p>${esc(p.desc)}</p></div>
+ <details class="acc"><summary><span>Alerjen Uyarıları<small>(${p.al} Alerjen)</small></span>${I.chev}</summary><div class="in">${p.al?['Gluten','Süt','Yumurta','Hardal','Susam','Soya'].slice(0,p.al).join(' · '):'Bilinen alerjen içermez.'}</div></details>
+ <details class="acc"><summary><span>Besin Değerleri<small>(7 Değer)</small></span>${I.chev}</summary><div class="in nut num"><span>Enerji</span><span>${Math.round(p.price*1.6)} kcal</span><span>Yağ</span><span>${Math.round(p.price/18)} g</span><span>Doymuş yağ</span><span>${Math.round(p.price/60)} g</span><span>Karbonhidrat</span><span>${Math.round(p.price/6)} g</span><span>Şeker</span><span>${Math.round(p.price/50)} g</span><span>Protein</span><span>${Math.round(p.price/12)} g</span><span>Tuz</span><span>${(p.price/300).toFixed(1)} g</span></div></details>
+ ${grp}<div style="height:16px"></div>
+ <div class="bottombar"><div class="stepper"><button class="lite" aria-label="Azalt" data-a="qty" data-v="-1">${S.qty>1?I.minus:I.trash}</button><span class="num">${S.qty}</span><button aria-label="Artır" data-a="qty" data-v="1">${I.plus}</button></div>
+ <button class="btn btn-ink" data-a="addcart">Sepete Ekle · <span class="num">${fmt(u*S.qty)}</span></button></div>`};
+
+V.cart=()=>{const t=cartTotals();
+ if(!S.cart.length)return `<div class="topbar"><button class="back" data-a="tomenu">${I.back}Menü</button><h2>Sepetim</h2></div><div class="empty"><h3>Sepetin boş</h3><p>Menüden bir şeyler ekleyerek başla.</p><button class="btn btn-red" data-a="tomenu" style="margin-top:16px">Menüye git</button></div>`;
+ return `<div class="topbar"><button class="back" data-a="tomenu">${I.back}Menü</button><h2>Sepetim</h2></div>
+ <div class="card"><div class="seg"><button class="${S.mode==='gelal'?'on':''}" data-a="mode" data-v="gelal">Gel-Al</button><button class="${S.mode==='masa'?'on':''}" data-a="mode" data-v="masa">Masaya Sipariş</button></div>
+  <button class="menu-row" data-tab="branches" style="padding-bottom:0;border:0"><span><small class="muted" style="display:block;font-size:11.5px">Şube</small>${esc(S.branch.name)}</span>${I.right}</button></div>
+ <div class="card">${S.cart.map((l,i)=>{const p=prod(l.pid);return `<div class="cline"><div class="ph">${pic(p)}</div><div class="t"><h4>${esc(p.name)}</h4><p>${l.opts.length?esc(l.opts.join(', ')):'Ek seçim yok'}</p>
+  <div class="r"><b class="num">${fmt(l.unit*l.qty)}</b><div class="stepper"><button class="lite" aria-label="Azalt" data-a="cq" data-i="${i}" data-v="-1">${l.qty>1?I.minus:I.trash}</button><span class="num">${l.qty}</span><button aria-label="Artır" data-a="cq" data-i="${i}" data-v="1">${I.plus}</button></div></div></div></div>`}).join('')}</div>
+ <div class="card"><b style="font-size:14px">İndirim kodu</b><div class="coupon" style="margin-top:10px">${S.coupon?`<div class="input" style="display:flex;align-items:center;justify-content:space-between;height:44px"><span><b>${S.coupon}</b> · ${COUPONS[S.coupon].label}</span><button style="background:none;color:var(--red);padding:0" data-a="rmcoupon">Kaldır</button></div>`:`<input class="input" id="cpn" placeholder="Örn. MIXSOS10" autocapitalize="characters"><button data-a="coupon">Uygula</button>`}</div></div>
+ <div class="card num"><div class="kv"><span>Ara toplam</span><span>${fmt(t.sub)}</span></div>${t.disc?`<div class="kv" style="color:var(--ok)"><span>İndirim</span><span>−${fmt(t.disc)}</span></div>`:''}
+  <div class="kv muted"><span>KDV (%10, fiyata dahil)</span><span>${fmt(t.kdv)}</span></div><div class="kv total"><span>Toplam</span><span>${fmt(t.total)}</span></div></div>
+ <div style="height:8px"></div><div class="bottombar"><button class="btn btn-red" data-a="tocheckout">Ödemeye geç · <span class="num">${fmt(t.total)}</span></button></div>`};
+
+V.checkout=()=>{const isTop=S.pay&&S.pay.kind==='topup';const amount=isTop?S.pay.amount:cartTotals().total;const c=S.card;
+ const shown=(c.no||'').padEnd(16,'•').replace(/(.{4})/g,'$1 ').trim();
+ return `<div class="topbar"><button class="back" data-a="${isTop?'tohome':'tocart'}">${I.back}Geri</button><h2>Ödeme</h2></div>
+ <div class="card"><div class="kv total" style="border:0;margin:0;padding:0"><span>${isTop?'Yüklenecek bakiye':'Ödenecek tutar'}</span><span class="num">${fmt(amount)}</span></div></div>
+ ${!isTop?`<div class="pad"><div class="paywith"><button class="opt ${S.payMethod==='card'?'on':''}" data-a="pm" data-v="card"><span>Kredi / Banka Kartı</span><span class="radio"></span></button>
+  <button class="opt ${S.payMethod==='wallet'?'on':''}" data-a="pm" data-v="wallet"><span>Mixsos Bakiyesi <small class="muted num">(${fmt(S.balance+S.bonus)})</small></span><span class="radio"></span></button></div></div>`:''}
+ ${S.payMethod==='card'||isTop?`<div class="card" style="display:flex;flex-direction:column;gap:12px">
+  <div class="demo-note"><b>Test modu.</b> Gerçek kart bilgisi girme, ödeme alınmaz. Canlıda bu adımda iyzico’nun güvenli ödeme formu açılır; kart bilgisi uygulamaya ya da sunucumuza hiç uğramaz.</div>
+  <div class="cardviz"><span style="font-size:12px;color:#CFCACB">Kart</span><span class="no">${shown}</span><div class="bt"><span>${esc(c.name||'AD SOYAD').toLocaleUpperCase('tr')}</span><span>${esc(c.exp||'AA/YY')}</span></div></div>
+  <button class="btn btn-ghost" style="height:42px" data-a="testcard">Test kartını doldur</button>
+  <label class="f">Kart üzerindeki isim<input class="input" id="cname" value="${esc(c.name)}" autocomplete="off"></label>
+  <label class="f">Kart numarası<input class="input num" id="cno" inputmode="numeric" maxlength="19" value="${esc(c.no.replace(/(.{4})/g,'$1 ').trim())}" autocomplete="off"></label>
+  <div class="two"><label class="f">Son kullanma<input class="input num" id="cexp" placeholder="AA/YY" maxlength="5" value="${esc(c.exp)}" autocomplete="off"></label><label class="f">CVC<input class="input num" id="ccvc" inputmode="numeric" maxlength="4" value="${esc(c.cvc)}" autocomplete="off"></label></div>
+ </div>`:''}
+ <div class="secure">${I.lock} 3D Secure ile korunur</div><div style="height:12px"></div>
+ <div class="bottombar"><button class="btn btn-red" data-a="pay">${S.payMethod==='wallet'&&!isTop?'Bakiye ile öde':'Öde'} · <span class="num">${fmt(amount)}</span></button></div>`};
+
+V.threeds=()=>`<div class="topbar"><button class="back" data-a="tocheckout">${I.back}İptal</button><h2>3D Secure</h2></div>
+ <form class="form" id="tdsForm"><h1>Bankanızın doğrulama adımı</h1><p class="hint">Canlıda bu sayfayı kartı veren banka gösterir. Demo için iyzico sandbox’ındaki SMS kodunu kullan.</p>
+ <div class="demo-note">Demo SMS kodu: <b>283126</b></div>
+ <input class="input otp num" id="tds" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code">
+ <button class="btn btn-red" type="submit">Onayla</button></form>`;
+
+V.track=()=>{const o=S.orders[0];const steps=[['Sipariş Alındı','Şubeye iletildi'],['Hazırlanıyor','Ustalarımız siparişini hazırlıyor'],['Teslim Alınmaya Hazır',S.mode==='masa'?'Masana getiriliyor':'Kasadan teslim alabilirsin']];
+ return `<div class="withnav"><div class="okhead"><div class="big">${I.check.replace(/16/g,'30')}</div><h1>Ödeme başarılı</h1><p class="muted" style="margin:6px 0 0;font-size:13px">Sipariş no <b class="num">#${o.no}</b> · ${esc(o.branch)}</p></div>
+ <div class="card"><div class="track">${steps.map((s,i)=>`<div class="tstep ${i<o.status?'done':i===o.status?(o.status===2?'done':'cur'):''}"><span class="dot">${i<o.status||o.status===2?I.check:''}</span><div><b>${s[0]}</b><small>${s[1]}</small></div></div>`).join('')}</div></div>
+ <div class="card num">${o.lines.map(l=>`<div class="kv"><span>${l.qty}× ${esc(prod(l.pid).name)}</span><span>${fmt(l.unit*l.qty)}</span></div>`).join('')}<div class="kv total"><span>Toplam</span><span>${fmt(o.total)}</span></div></div>
+ <div class="pad"><button class="btn btn-ink" data-tab="home">Anasayfaya dön</button></div></div>`};
+
+V.camp=()=>{const c=CAMPS.find(x=>x.id===S.cid);const p=prod(c.pid);
+ return `<div class="camp-view"><button class="camp-close" data-a="back">${I.back}Geri</button><img src="img/${c.img}.jpg" alt="${esc(p.name)} kampanyası"><div class="cta"><button class="btn btn-red" data-a="openp" data-v="${p.id}">${esc(p.name)} · <span class="num">${p.from?'':''}${fmt(p.price)}${p.from?'’den':''}</span></button></div></div>`};
+V.qr=()=>`<div class="withnav"><div class="topbar" style="position:static;border:0"><h2 style="margin:0">QR kod ödeme</h2></div>
+ <div class="qrbox"><canvas id="qrc" width="29" height="29" aria-label="Ödeme QR kodu"></canvas><span class="timer num">${I.clock}<span id="qrt">04:59</span></span>
+ <div class="codebox"><span class="muted">Kod</span><span style="display:flex;gap:10px;align-items:center"><span class="m num">${S.showCode?S.qrCode:'••••'}</span><button aria-label="Kodu göster" data-a="eye">${I.eye}</button></span></div>${powered()}</div>
+ <div class="pad">${walletCard(true)}</div>
+ <p class="hint pad" style="margin-top:12px">Kasada bu kodu okut; tutar bakiyenden düşülür. Kod 5 dakikada bir yenilenir.</p></div>`;
+
+V.branches=()=>`<div class="withnav"><div class="topbar" style="position:static"><h2 style="margin:0">Şubeler</h2></div>
+ ${BR.map(b=>`<button class="br" data-a="openb" data-v="${b.id}"><div class="thumb">MIXSOS</div><div style="flex:1;min-width:0"><h4>${esc(b.name)} <small class="muted" style="font-weight:500">${b.km}</small></h4><p>${esc(b.addr)}</p></div><span class="${b.open?'open':'closed'}">${b.open?'Açık':'Kapalı'}</span></button>`).join('')}</div>`;
+
+V.branch=()=>{const b=BR.find(x=>x.id===S.bid);const days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+ return `<div class="withnav"><div class="topbar"><button class="back" data-tab="branches">${I.back}Geri</button><h2>${esc(b.name)}</h2></div>
+ <div class="bd-img">${logo(30)}</div>
+ <div class="card" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;align-items:center"><b>${esc(b.name)} <small class="muted" style="font-weight:500">${b.km}</small></b><span class="${b.open?'open':'closed'}">${b.open?'Açık':'Kapalı'}</span></div>
+ <p class="hint" style="margin:0">${esc(b.addr)}<br><span class="num">${esc(b.tel)}</span></p>
+ <div class="two"><a class="btn btn-ink" style="height:42px;text-decoration:none;font-size:13.5px" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.addr)}" target="_blank" rel="noopener">Yol Tarifi Al</a><button class="btn btn-ghost" style="height:42px;font-size:13.5px" data-a="contact">İletişime Geç</button></div>
+ <button class="btn btn-red" style="height:44px" data-a="orderhere" data-v="${b.id}">Sipariş Ver</button></div>
+ <div class="card"><b style="font-size:14px">Erişilebilirlik</b><div class="facts" style="margin-top:12px"><div>${I.wifi}Wi-Fi</div><div>${I.park}Otopark</div><div>${I.smoke}Sigara İçilebilir Alan</div><div>${I.plug}Priz</div></div></div>
+ <div class="card hours num"><b style="font-size:14px">Çalışma saatleri</b><div style="margin-top:8px">${days.map(d=>`<div class="kv"><span>${d}</span><span>10:30 - 02:00</span></div>`).join('')}</div></div></div>`};
+
+V.profile=()=>{const u=S.user;
+ return `<div class="withnav"><div class="topbar" style="position:static"><h2 style="margin:0">Profil</h2></div>
+ <div class="card">${u?`<div class="prof"><div class="avatar">${esc(u.name[0]||'M').toLocaleUpperCase('tr')}</div><div><b>${esc(u.name)}</b><div class="muted num" style="font-size:13px">+90 ${esc(u.phone)}</div></div></div>`
+ :`<b>Misafir olarak geziyorsun</b><p class="hint">Sipariş geçmişi, bakiye ve damga kartı için giriş yap.</p><button class="btn btn-red" data-a="tologin">Giriş yap ya da kayıt ol</button>`}</div>
+ <div class="card"><b style="font-size:14px">Siparişlerim</b>${S.orders.length?S.orders.map(o=>`<div class="menu-row num"><span>#${o.no} · ${o.lines.reduce((a,l)=>a+l.qty,0)} ürün</span><span>${fmt(o.total)}</span></div>`).join(''):'<p class="hint">Henüz siparişin yok.</p>'}</div>
+ ${u?`<div class="card"><button class="menu-row" data-a="logout" style="color:var(--red)">Çıkış yap</button></div>`:''}
+ <div class="pad">${powered()}</div></div>`};
+
+// ---------- Render ----------
+function tabbar(){const tabs=[['home','Anasayfa',I.home],['menu','Menü',I.book],['qr','',I.qr],['branches','Şubeler',I.pin],['profile','Profil',I.user]];
+ const active=S.screen==='branch'?'branches':S.screen;const n=cartTotals().count;
+ return tabs.map(([k,l,ic])=>k==='qr'?`<button class="qr" data-tab="qr" aria-label="QR ile öde">${ic}</button>`:`<button class="${active===k?'on':''}" data-tab="${k}"><span class="relative">${ic}${k==='menu'&&n?`<span class="badge num">${n}</span>`:''}</span>${l}</button>`).join('')}
+function render(){clearTimers();
+ $('#screen').innerHTML=V[S.screen]()+(S.sheet?sheet():'');
+ const withNav=['home','menu','qr','branches','branch','profile','track'].includes(S.screen);
+ const tb=$('#tabbar');tb.hidden=!withNav;if(withNav)tb.innerHTML=tabbar();
+ after();}
+function sheet(){if(S.sheet==='topup')return `<div class="scrim" data-a="closesheet"><div class="sheet" data-stop="1"><h3>Bakiye yükle</h3><div class="chips">${[100,250,500,750,1000,2000].map(v=>`<button class="num ${S.topup===v?'on':''}" data-a="tv" data-v="${v}">₺${v}</button>`).join('')}</div><p class="hint" style="margin:0">₺500 ve üzeri yüklemelerde %5 bonus.</p><button class="btn btn-red" data-a="dotopup">Devam · <span class="num">${fmt(S.topup)}</span></button></div></div>`;
+ if(S.sheet==='contact'){const b=BR.find(x=>x.id===S.bid);return `<div class="scrim" data-a="closesheet"><div class="sheet" data-stop="1"><h3>${esc(b.name)}</h3><p class="hint" style="margin:0">Telefon</p><div class="input num" style="display:flex;align-items:center;user-select:all">${esc(b.tel)}</div><button class="btn btn-ink" data-a="copytel">Numarayı kopyala</button></div></div>`}return ''}
+function after(){
+ if(S.screen==='splash')timers.push(setTimeout(()=>go('onboarding'),1400));
+ if(S.screen==='qr'){drawQR();let left=299;const el=$('#qrt');timers.push(setInterval(()=>{left--;if(left<0){left=299;S.qrCode=rndCode();drawQR()}el.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0')},1000))}
+ if(S.screen==='track'){const o=S.orders[0];if(o.status<2)timers.push(setInterval(()=>{o.status++;render()},4000))}
+ if(S.screen==='menu'){const q=$('#q');q.addEventListener('input',e=>{S.q=e.target.value;const pos=e.target.selectionStart;render();const n=$('#q');n.focus();n.setSelectionRange(pos,pos)})}
+ if(S.screen==='checkout')bindCard();
+ if(S.screen==='login'){$('#loginForm').addEventListener('submit',loginSubmit);const f=$('#phone')||$('#otp');f&&f.focus()}
+ if(S.screen==='threeds')$('#tdsForm').addEventListener('submit',tdsSubmit);
+}
+const rndCode=()=>String(Math.floor(1000+Math.random()*9000));
+function drawQR(){const c=$('#qrc');if(!c)return;const x=c.getContext('2d');const N=29;x.fillStyle='#fff';x.fillRect(0,0,N,N);x.fillStyle='#111';
+ let seed=+S.qrCode*7919;const r=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+ for(let i=0;i<N;i++)for(let j=0;j<N;j++)if(r()>.52)x.fillRect(i,j,1,1);
+ [[0,0],[N-7,0],[0,N-7]].forEach(([a,b])=>{x.fillStyle='#fff';x.fillRect(a-1<0?0:a-1,b-1<0?0:b-1,8,8);x.fillStyle='#111';x.fillRect(a,b,7,7);x.fillStyle='#fff';x.fillRect(a+1,b+1,5,5);x.fillStyle='#111';x.fillRect(a+2,b+2,3,3)})}
+
+// ---------- Formlar ----------
+function loginSubmit(e){e.preventDefault();
+ if(!S.otpSent){const v=$('#phone').value.replace(/\D/g,'');if(!/^5\d{9}$/.test(v)){toast('Numarayı 5 ile başlayan 10 hane olarak gir.');return}S.phone=v;S.otpSent=true;render();toast('Doğrulama kodu gönderildi (demo).');return}
+ if($('#otp').value!=='123456'){toast('Kod hatalı. Demo kodu: 123456');return}
+ const name=($('#uname').value||'').trim()||'Mixsos Üyesi';S.user={name,phone:S.phone};S.otpSent=false;
+ if(S.afterLogin){const a=S.afterLogin;S.afterLogin=null;go(a)}else go('home');toast('Hoş geldin, '+name+'!')}
+function bindCard(){const m={cname:'name',cno:'no',cexp:'exp',ccvc:'cvc'};Object.keys(m).forEach(id=>{const el=$('#'+id);if(!el)return;el.addEventListener('input',e=>{let v=e.target.value;
+  if(id==='cno'){v=v.replace(/\D/g,'').slice(0,16);e.target.value=v.replace(/(.{4})/g,'$1 ').trim()}
+  if(id==='cexp'){v=v.replace(/\D/g,'').slice(0,4);if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);e.target.value=v}
+  if(id==='ccvc'){v=v.replace(/\D/g,'').slice(0,4);e.target.value=v}
+  S.card[m[id]]=v;const cv=$('.cardviz');if(cv){cv.querySelector('.no').textContent=(S.card.no||'').padEnd(16,'•').replace(/(.{4})/g,'$1 ').trim();cv.querySelectorAll('.bt span')[0].textContent=(S.card.name||'AD SOYAD').toLocaleUpperCase('tr');cv.querySelectorAll('.bt span')[1].textContent=S.card.exp||'AA/YY'}})})}
+function luhn(n){let s=0,d=false;for(let i=n.length-1;i>=0;i--){let x=+n[i];if(d){x*=2;if(x>9)x-=9}s+=x;d=!d}return s%10===0}
+function tdsSubmit(e){e.preventDefault();if($('#tds').value!=='283126'){toast('Kod hatalı. Demo kodu: 283126');return}finishPayment()}
+function finishPayment(){
+ if(S.pay.kind==='topup'){const a=S.pay.amount;S.balance+=a;if(a>=500)S.bonus+=Math.round(a*0.05);S.pay=null;go('home');toast(fmt(a)+' bakiye yüklendi.');return}
+ const t=cartTotals();const o={no:String(Math.floor(100000+Math.random()*900000)),lines:S.cart.slice(),total:t.total,branch:S.branch.name,status:0};
+ S.orders.unshift(o);S.stamps=Math.min(10,S.stamps+S.cart.filter(l=>DONER_IDS.includes(l.pid)).reduce((a,l)=>a+l.qty,0));
+ S.cart=[];S.coupon=null;S.pay=null;go('track')}
+
+// ---------- Olaylar ----------
+document.addEventListener('click',e=>{
+ const st=e.target.closest('[data-stop]');const el=e.target.closest('[data-a],[data-tab]');if(!el)return;
+ if(st&&el.dataset.a==='closesheet'&&!e.target.closest('[data-a]:not(.scrim)'))return;
+ if(el.dataset.tab){go(el.dataset.tab,el.dataset.tab==='qr'&&!S.qrCode?{qrCode:rndCode()}:{});return}
+ const a=el.dataset.a,v=el.dataset.v;
+ switch(a){
+  case 'obnext':S.ob++;render();break;
+  case 'obskip':S.ob=3;render();break;
+  case 'tologin':go('login',{otpSent:false});break;
+  case 'loginback':S.user?go('profile'):go('onboarding',{ob:3});break;
+  case 'changephone':S.otpSent=false;render();break;
+  case 'guest':go('home');break;
+  case 'notif':toast('Bildirimler FCM bağlanınca burada görünecek.');break;
+  case 'topup':S.sheet='topup';render();break;
+  case 'tv':S.topup=+v;render();break;
+  case 'closesheet':if(e.target===el){S.sheet=null;render()}break;
+  case 'dotopup':if(!S.user){S.afterLogin='home';toast('Bakiye yüklemek için giriş yap.');go('login',{otpSent:false});break}S.pay={kind:'topup',amount:S.topup};go('checkout');break;
+  case 'opencat':go('menu',{cat:v});setTimeout(()=>{const s=$('#sec-'+v);s&&s.scrollIntoView({block:'start'})},30);break;
+  case 'cat':S.cat=v;render();{const s=$('#sec-'+v);s&&s.scrollIntoView({behavior:'smooth',block:'start'})}break;
+  case 'opencamp':S._from=S.screen;go('camp',{cid:v});break;
+  case 'openp':S._from=S.screen==='camp'?'home':S.screen;go('product',{pid:v,sel:{},qty:1,_tried:false});break;
+  case 'back':go(S._from||'menu');break;
+  case 'pick':{const p=prod(S.pid);const g=p.groups.find(x=>x.id===el.dataset.g);const i=+el.dataset.i;let s=S.sel[g.id]||[];
+    if(g.max===1)s=[i];else if(s.includes(i))s=s.filter(x=>x!==i);else if(s.length<g.max)s=[...s,i];else{toast('En fazla '+g.max+' seçim yapabilirsin.');break}
+    S.sel[g.id]=s;const top=$('#screen').scrollTop;render();$('#screen').scrollTop=top;break}
+  case 'qty':{const n=S.qty+(+v);if(n<1){go(S._from||'menu');break}S.qty=n;const top=$('#screen').scrollTop;render();$('#screen').scrollTop=top;break}
+  case 'addcart':{const p=prod(S.pid);const miss=p.groups.find(g=>g.req&&!(S.sel[g.id]||[]).length);
+    if(miss){S._tried=true;render();const g=$('#g-'+miss.id);g&&g.scrollIntoView({behavior:'smooth',block:'center'});toast(miss.name+' zorunlu.');break}
+    const opts=[];p.groups.forEach(g=>(S.sel[g.id]||[]).forEach(i=>opts.push(g.opts[i][0])));
+    const key=p.id+'|'+opts.join('|');const ex=S.cart.find(l=>l.key===key);const unit=unitPrice(p,S.sel);
+    if(ex)ex.qty+=S.qty;else S.cart.push({key,pid:p.id,opts,unit,qty:S.qty});
+    go('menu');toast(p.name+' sepete eklendi.');break}
+  case 'tocart':case 'tomenu':go(a==='tocart'?(cartTotals().count?'cart':'menu'):'menu');if(a==='tocart'&&!cartTotals().count)toast('Önce menüden bir ürün seç.');break;
+  case 'cq':{const l=S.cart[+el.dataset.i];l.qty+=+v;if(l.qty<1)S.cart.splice(+el.dataset.i,1);render();break}
+  case 'mode':S.mode=v;render();break;
+  case 'coupon':{const c=($('#cpn').value||'').trim().toLocaleUpperCase('tr');if(COUPONS[c]){S.coupon=c;render();toast(COUPONS[c].label+' uygulandı.')}else toast('Bu kod geçerli değil. Demo: MIXSOS10');break}
+  case 'rmcoupon':S.coupon=null;render();break;
+  case 'tocheckout':if(!S.user){S.afterLogin='checkout';toast('Siparişi tamamlamak için giriş yap.');go('login',{otpSent:false,pay:{kind:'order'}});break}go('checkout',{pay:{kind:'order'},payMethod:'card'});break;
+  case 'tocheckout2':break;
+  case 'tohome':go('home',{pay:null});break;
+  case 'pm':S.payMethod=v;render();break;
+  case 'testcard':S.card={name:'Test Kullanıcı',no:'5528790000000008',exp:'12/30',cvc:'123'};render();break;
+  case 'pay':{const isTop=S.pay.kind==='topup';
+    if(!isTop&&S.payMethod==='wallet'){const t=cartTotals().total;if(S.balance+S.bonus<t){toast('Bakiye yetersiz. Önce bakiye yükle.');break}let r=t;const fromB=Math.min(S.bonus,r);S.bonus-=fromB;r-=fromB;S.balance-=r;finishPayment();break}
+    const c=S.card;if(c.name.trim().length<3){toast('Kart üzerindeki ismi gir.');break}if(c.no.length<15||!luhn(c.no)){toast('Kart numarası geçersiz.');break}
+    if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(c.exp)){toast('Son kullanma tarihini AA/YY olarak gir.');break}if(c.cvc.length<3){toast('CVC 3 haneli olmalı.');break}
+    go('threeds');break}
+  case 'eye':S.showCode=!S.showCode;render();break;
+  case 'openb':go('branch',{bid:v});break;
+  case 'orderhere':{const b=BR.find(x=>x.id===v);if(!b.open){toast('Şube şu an kapalı.');break}S.branch=b;go('menu');toast(b.name+' seçildi.');break}
+  case 'contact':S.sheet='contact';render();break;
+  case 'copytel':{const b=BR.find(x=>x.id===S.bid);(navigator.clipboard?navigator.clipboard.writeText(b.tel):Promise.reject()).then(()=>toast('Numara kopyalandı.')).catch(()=>toast('Numarayı seçip kopyala.'));break}
+  case 'logout':S.user=null;go('home');toast('Çıkış yapıldı.');break;
+ }
+});
+render();
+</script>
+</body>
+</html>
