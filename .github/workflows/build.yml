@@ -24,9 +24,6 @@ jobs:
   #    değişiklikler APK yeniden kurulmadan, uygulama bir sonraki açılışta görünür.
   site:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Ürün görsellerini indir
@@ -37,12 +34,19 @@ jobs:
             curl -fsSL --retry 2 "$u" -o "www/img/ys/$f" || echo "Atlandı: $f"
           done < ci/images.txt
           ls www/img/ys | wc -l
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: www
-      - id: deploy
-        uses: actions/deploy-pages@v4
+      - name: gh-pages dalına yayınla
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd www
+          touch .nojekyll
+          [ -f ../CNAME ] && cp ../CNAME .
+          git init -q -b gh-pages
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Yayın ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
 
   # 2) APK: yalnızca uygulama kabuğu değişince gerekir (ikon, ad, izinler, canlı adres).
   #    Commit mesajında [apk] geçerse ya da Actions'tan elle çalıştırılırsa üretilir.
