@@ -328,36 +328,56 @@ const ART = {
 };
 
 // ---------- Veri (demo) ----------
-const DRINK={id:'drink',name:'İçecek Seçimi',req:true,max:1,opts:[['Pepsi (33 cl.)',0],['Pepsi Zero Sugar (33 cl.)',0],['Yedigün (33 cl.)',0],['Lipton Ice Tea (33 cl.)',0],['Ayran',0]]};
+const DRINK={id:'drink',name:'İçecek Seçimi',req:true,max:1,opts:[['Pepsi (33 cl.)',0],['Pepsi Zero Sugar (33 cl.)',0],['Lipton Ice Tea (33 cl.)',0],['Yedigün (33 cl.)',0],['7UP (33 cl.)',0]]};
 const FRIES={id:'fries',name:'Patates Boyu',req:true,max:1,opts:[['Küçük boy',0],['Büyük boy',40]]};
-const SOS={id:'sos',name:'Ekstra Sos',req:false,max:3,opts:[['Mixsos Sos',20],['Acı Sos',20],['Ranch Sos',25],['Barbekü Sos',20]]};
-const SIZE={id:'size',name:'Porsiyon',req:true,max:1,opts:[['Normal',0],['Large',40]]};
-const CATS=[['kamp','Dev Kampanya'],['durum','Dürümler'],['burger','Burgerler'],['box','Box & Makarna'],['yan','Atıştırmalıklar'],['icecek','İçecekler']];
-// img: kampanya görsellerinden kırpılan gerçek fotoğraflar. img'si olmayanlar mixsos.com görselleri eklenene kadar çizimle gösterilir.
-// fiyat: kampanya görsellerindekiler gerçek; diğerleri örnek (Firestore'a girilince güncellenir).
+const SOS={id:'sos',name:'Ekstra Sos',req:false,max:3,opts:[['Ketçap',15],['Mayonez',15],['Sarımsaklı Mayonez',15]]};
+const CATS=[['kamp','Kampanyalar'],['durum-menu','Dürüm Menüleri'],['burger','Burger Menüleri'],['box','Box Menüler'],['doner','Tavuk Dönerler'],['yan','Yan Ürünler'],['icecek','İçecekler'],['sos','Soslar']];
+// Menü ve fiyatlar: Yemeksepeti Mixsos (Kocaeli) sayfasından. Görseller derleme sırasında img/ys/ klasörüne indirilir.
 const P=[
- {id:'kebabi-menu',cats:['kamp'],name:'Kebabı + İçecek Menü',price:150,img:'kebabi-menu',art:'wrap',badge:'Yeni',desc:'Sumaklı soğanla geleneksel tat. Kebabı dürüm + içecek.',groups:[DRINK,SOS],al:4},
- {id:'hatay',cats:['kamp','durum'],name:'Hatay Usulü Soslu Döner',price:100,img:'hatay-doner',art:'wrap',from:true,desc:'Hatay usulü soslu tavuk döner, çıtır patates ve mayonez.',groups:[SIZE,SOS],al:4},
- {id:'chicken',cats:['kamp','burger'],name:'Chicken Burger',price:90,img:'chicken-burger',art:'burger',desc:'Çıtır tavuk köfte, marul, mayonez, ketçap.',groups:[SOS],al:5},
- {id:'efsane',cats:['kamp','burger'],name:'Efsane Burger',price:110,art:'burger',desc:'Mixsos’un efsane burgeri.',groups:[SOS],al:5},
- {id:'doner-box',cats:['kamp','box'],name:'Yoğurt Soslu Döner Box',price:180,img:'doner-box',art:'box',desc:'Tavuk döner, yeşillik, patates ve yoğurt sos, kutuda.',groups:[DRINK,SOS],al:3},
- {id:'pesto',cats:['kamp','box'],name:'Pesto Soslu Dönerli Makarna',price:190,img:'pesto-makarna',art:'box',desc:'Pesto soslu makarna üzerinde tavuk döner.',groups:[DRINK],al:3},
- {id:'kebabi-durum',cats:['durum'],name:'Kebabı Dürüm',price:120,img:'kebabi',art:'wrap',badge:'Yeni',desc:'Sumaklı soğan, domates, maydanoz, patates. Lezzetin en doğal hali.',groups:[SIZE,SOS],al:4},
- {id:'cheddar',cats:['durum'],name:'Cheddarlı Dürüm',price:140,art:'wrap',desc:'Cheddar peyniri, çıtır patates ve soslar.',groups:[SIZE,SOS],al:5},
- {id:'chilli',cats:['durum'],name:'Chilli Dürüm',price:130,art:'wrap',desc:'Acı sos, yeşillik ve çıtır patates.',groups:[SIZE,SOS],al:4},
- {id:'burrito',cats:['durum'],name:'Burrito Menü',price:200,art:'wrap',desc:'Burrito ve soğuk içecek.',groups:[DRINK],al:4},
- {id:'kids',cats:['burger'],name:'Kids Burger',price:95,art:'burger',desc:'Küçük misafirlerimiz için Mixsos burger.',groups:[DRINK],al:5},
- {id:'kova',cats:['yan'],name:'Kova Patates',price:120,art:'fries',desc:'Paylaşmalık kovada çıtır patates.',groups:[SOS],al:0},
- {id:'patates',cats:['yan'],name:'Patates Kızartması',price:60,art:'fries',desc:'Çıtır patates kızartması.',groups:[FRIES],al:0},
- {id:'pepsi',cats:['icecek'],name:'Pepsi (33 cl.)',price:45,art:'drink',desc:'Kutu içecek.',groups:[],al:0},
- {id:'ayran',cats:['icecek'],name:'Ayran',price:35,art:'drink',desc:'Şişe ayran.',groups:[],al:1}
+ {id:'ys-fix',cats:['kamp'],name:'Yemeksepeti Fix Menü',price:500,old:620,img:'img/ys/ys-fix.jpg',art:'wrap',badge:'Fırsat',desc:'Tavuk döner dürüm + kutu içecek.',groups:[DRINK,SOS],al:4},
+ {id:'kebabi-menu',cats:['kamp', 'durum-menu'],name:'Kebabi Dürüm Menü',price:650,old:0,img:'img/ys/kebabi-menu.jpg',art:'wrap',badge:'Yeni',desc:'100 gr Kebabi dürüm + kutu içecek.',groups:[DRINK,SOS],al:4},
+ {id:'hatay-menu',cats:['durum-menu'],name:'Hatay Soslu Dürüm Menü',price:560,old:0,img:'img/ys/hatay-menu.jpg',art:'wrap',badge:'',desc:'80 gr Hatay soslu dürüm + kutu içecek.',groups:[DRINK,SOS],al:4},
+ {id:'hatay-mega-menu',cats:['durum-menu'],name:'Hatay Soslu Mega Dürüm Menü',price:640,old:0,img:'img/ys/hatay-mega-menu.jpg',art:'wrap',badge:'',desc:'120 gr Hatay soslu mega dürüm + kutu içecek.',groups:[DRINK,SOS],al:4},
+ {id:'burrito-menu',cats:['durum-menu'],name:'Burrito Tavuk Döner Dürüm Menü',price:800,old:0,img:'img/ys/burrito-menu.jpg',art:'wrap',badge:'',desc:'200 gr tavuk döner burrito dürüm + kutu içecek.',groups:[DRINK,SOS],al:5},
+ {id:'chicken-menu',cats:['kamp', 'burger'],name:'Chicken Burger Menü',price:510,old:0,img:'img/ys/chicken-menu.jpg',art:'burger',badge:'',desc:'Chicken burger + kutu içecek.',groups:[DRINK,SOS],al:5},
+ {id:'chicken',cats:['burger'],name:'Chicken Burger',price:340,old:0,img:'img/ys/chicken.jpg',art:'burger',badge:'',desc:'Yumuşak ekmek arasında tavuk, sarımsaklı mayonez, marul ve ketçap.',groups:[SOS],al:5},
+ {id:'doner-box',cats:['kamp', 'box'],name:'Tavuk Döner Box',price:340,old:0,img:'img/ys/doner-box.jpg',art:'box',badge:'',desc:'Baharatlı tavuk döner, çıtır patates ve taze marul, Mixsos sos ile kutuda. Yüksek protein, glutensiz.',groups:[SOS],al:2},
+ {id:'makar-box',cats:['kamp', 'box'],name:'Makar Box',price:340,old:0,img:'img/ys/makar-box.jpg',art:'box',badge:'',desc:'Pesto soslu penne makarna, tavuk döner ve eriyen kaşar.',groups:[SOS],al:3},
+ {id:'makar-menu',cats:['box'],name:'Makarbox Menü',price:455,old:0,img:'img/ys/makar-menu.jpg',art:'box',badge:'',desc:'Makar Box + kutu içecek.',groups:[DRINK,SOS],al:3},
+ {id:'doner-box-menu',cats:['box'],name:'Tavuk Döner Box Menü',price:455,old:0,img:'img/doner-box.jpg',art:'box',badge:'',desc:'Tavuk Döner Box + kutu içecek.',groups:[DRINK,SOS],al:2},
+ {id:'citir-box',cats:['box'],name:'Çıtır Box',price:340,old:0,img:'img/ys/citir-box.jpg',art:'box',badge:'',desc:'Özel kaplamalı çıtır tenders, kutuda.',groups:[SOS],al:3},
+ {id:'citir-box-menu',cats:['box'],name:'Çıtır Box Menü',price:455,old:0,img:'img/ys/citir-box.jpg',art:'box',badge:'',desc:'Çıtır Box + kutu içecek.',groups:[DRINK,SOS],al:3},
+ {id:'kebabi-durum',cats:['doner'],name:'Kebabi Dürüm',price:500,old:0,img:'img/ys/kebabi-durum.jpg',art:'wrap',badge:'Yeni',desc:'100 gr tavuk döner, sumaklı soğan, domates, maydanoz, sarımsaklı mayonez.',groups:[SOS],al:4},
+ {id:'hatay-durum',cats:['doner'],name:'Hatay Soslu Tavuk Döner Dürüm',price:400,old:0,img:'img/ys/hatay-durum.jpg',art:'wrap',badge:'',desc:'80 gr tavuk döner, patates, Hatay sos, sarımsaklı mayonez.',groups:[SOS],al:4},
+ {id:'hatay-mega',cats:['doner'],name:'Hatay Soslu Mega Dürüm',price:510,old:0,img:'img/ys/hatay-mega.jpg',art:'wrap',badge:'',desc:'120 gr tavuk döner, patates, Hatay sos, sarımsaklı mayonez.',groups:[SOS],al:4},
+ {id:'burrito',cats:['doner'],name:'Burrito Dürüm',price:700,old:0,img:'img/ys/burrito.jpg',art:'wrap',badge:'',desc:'200 gr tavuk döner, cheddar, patates, domates, kaşar, mor lahana.',groups:[SOS],al:5},
+ {id:'patates',cats:['yan'],name:'Patates Kızartması',price:100,old:0,img:'img/ys/patates.jpg',art:'fries',badge:'',desc:'Parmak patates.',groups:[],al:0},
+ {id:'patates-b',cats:['yan'],name:'Patates Kızartması (Büyük Boy)',price:120,old:0,img:'img/ys/patates-b.jpg',art:'fries',badge:'',desc:'Büyük boy parmak patates.',groups:[],al:0},
+ {id:'sogan6',cats:['yan'],name:'Soğan Halkası (6 Adet)',price:100,old:0,img:'img/ys/sogan6.jpg',art:'rings',badge:'',desc:'Çıtır soğan halkası.',groups:[],al:2},
+ {id:'sogan8',cats:['yan'],name:'Soğan Halkası (8 Adet)',price:125,old:0,img:'img/ys/sogan8.jpg',art:'rings',badge:'',desc:'Çıtır soğan halkası.',groups:[],al:2},
+ {id:'nugget5',cats:['yan'],name:'Tavuk Nugget (5 Adet)',price:135,old:0,img:'img/ys/nugget5.jpg',art:'fries',badge:'',desc:'Tek porsiyon.',groups:[],al:2},
+ {id:'nugget8',cats:['yan'],name:'Tavuk Nugget (8 Adet)',price:175,old:0,img:'img/ys/nugget8.jpg',art:'fries',badge:'',desc:'Tek porsiyon.',groups:[],al:2},
+ {id:'tenders2',cats:['yan'],name:'Tenders (2 Adet)',price:150,old:0,img:'img/ys/tenders2.jpg',art:'fries',badge:'',desc:'Tek porsiyon.',groups:[],al:2},
+ {id:'tenders4',cats:['yan'],name:'Tenders (4 Adet)',price:200,old:0,img:'img/ys/tenders4.jpg',art:'fries',badge:'',desc:'Tek porsiyon.',groups:[],al:2},
+ {id:'kroket5',cats:['yan'],name:'Tavuk Kroket (5 Adet)',price:180,old:0,img:'img/ys/kroket5.jpg',art:'fries',badge:'',desc:'Tek porsiyon.',groups:[],al:2},
+ {id:'kroket8',cats:['yan'],name:'Tavuk Kroket (8 Adet)',price:200,old:0,img:'img/ys/kroket8.jpg',art:'fries',badge:'',desc:'Tek porsiyon.',groups:[],al:2},
+ {id:'pepsi',cats:['icecek'],name:'Pepsi (33 cl.)',price:125,old:0,img:'img/ys/pepsi.jpg',art:'drink',badge:'',desc:'Kutu içecek.',groups:[],al:0},
+ {id:'pepsi-zero',cats:['icecek'],name:'Pepsi Zero Sugar (33 cl.)',price:125,old:0,img:'img/ys/pepsi-zero.jpg',art:'drink',badge:'',desc:'Kutu içecek.',groups:[],al:0},
+ {id:'lipton',cats:['icecek'],name:'Lipton Ice Tea (33 cl.)',price:125,old:0,img:'img/ys/lipton.jpg',art:'drink',badge:'',desc:'Kutu içecek.',groups:[],al:0},
+ {id:'yedigun',cats:['icecek'],name:'Yedigün (33 cl.)',price:125,old:0,img:'img/ys/yedigun.png',art:'drink',badge:'',desc:'Kutu içecek.',groups:[],al:0},
+ {id:'7up',cats:['icecek'],name:'7UP (33 cl.)',price:125,old:0,img:'img/ys/7up.jpg',art:'drink',badge:'',desc:'Kutu içecek.',groups:[],al:0},
+ {id:'ayran',cats:['icecek'],name:'Ayran (28,5 cl.)',price:85,old:0,img:'img/ys/ayran.jpg',art:'drink',badge:'',desc:'Büyük boy.',groups:[],al:1},
+ {id:'su',cats:['icecek'],name:'Su (50 cl.)',price:35,old:0,img:'img/ys/su.jpg',art:'drink',badge:'',desc:'Pet şişe.',groups:[],al:0},
+ {id:'ketcap',cats:['sos'],name:'Ketçap',price:15,old:0,img:'img/ys/ketcap.jpg',art:'drink',badge:'',desc:'Adet.',groups:[],al:0},
+ {id:'mayonez',cats:['sos'],name:'Mayonez',price:15,old:0,img:'img/ys/mayonez.jpg',art:'drink',badge:'',desc:'Adet.',groups:[],al:1},
+ {id:'sarimsakli',cats:['sos'],name:'Sarımsaklı Mayonez',price:15,old:0,img:'img/ys/sarimsakli.jpg',art:'drink',badge:'',desc:'Adet.',groups:[],al:1}
 ];
-const DONER_IDS=['kebabi-menu','hatay','doner-box','kebabi-durum','cheddar','chilli'];
+const DONER_IDS=['ys-fix','kebabi-menu','hatay-menu','hatay-mega-menu','burrito-menu','kebabi-durum','hatay-durum','hatay-mega','burrito'];
 const CAMPS=[
- {id:'c6',img:'k6',pid:'kebabi-menu',wide:true},{id:'c5',img:'k5',pid:'kebabi-durum'},{id:'c3',img:'k3',pid:'hatay'},
- {id:'c2',img:'k2',pid:'chicken'},{id:'c1',img:'k1',pid:'doner-box'},{id:'c4',img:'k4',pid:'pesto'}
+ {id:'c6',img:'k6',pid:'kebabi-menu',wide:true},{id:'c5',img:'k5',pid:'kebabi-durum'},{id:'c3',img:'k3',pid:'hatay-durum'},
+ {id:'c2',img:'k2',pid:'chicken'},{id:'c1',img:'k1',pid:'doner-box'},{id:'c4',img:'k4',pid:'makar-box'}
 ];
-function pic(p){return p.img?`<img class="pic" src="img/${p.img}.jpg" alt="${esc(p.name)}" loading="lazy">`:ART[p.art]}
+function pic(p){return p.img?`<img class="pic" src="${p.img}" alt="${esc(p.name)}" loading="lazy" onerror="this.outerHTML=ART['${p.art}']">`:ART[p.art]}
 const BR=[
  {id:'b1',name:'Kadıköy Şubesi',km:'14.3 km',addr:'Osmanağa, Halitağa Cd. no:7c, 34734 Kadıköy/İstanbul',tel:'+905068435421',open:true},
  {id:'b2',name:'Örnek Şube 2',km:'18.9 km',addr:'Demo verisi — gerçek şubeler Firestore’dan gelecek',tel:'—',open:true},
@@ -429,7 +449,7 @@ V.home=()=>{const n=S.user?S.user.name:'Misafir';const pct=S.stamps/10;const C=2
  <button class="camp-hero" data-a="opencamp" data-v="c6"><img class="pic" src="img/k6.jpg" alt="Kebabı + İçecek 150 TL"></button>
  <div class="hscroll">${CAMPS.filter(c=>!c.wide).map(c=>`<button class="poster" data-a="opencamp" data-v="${c.id}"><img class="pic" src="img/${c.img}.jpg" alt="${esc(prod(c.pid).name)} kampanyası" loading="lazy"></button>`).join('')}</div>
  <div class="sec-title">Mixsos'dan</div>
- <div class="hscroll">${['kebabi-durum','doner-box','pesto','chicken','hatay'].map(id=>{const p=prod(id);return `<button class="tile" data-a="openp" data-v="${id}"><div class="img">${pic(p)}</div><div class="c">${esc(p.name)}<small class="num">${fmt(p.price)}</small></div></button>`}).join('')}</div>
+ <div class="hscroll">${['ys-fix','kebabi-menu','doner-box','makar-box','chicken-menu'].map(id=>{const p=prod(id);return `<button class="tile" data-a="openp" data-v="${id}"><div class="img">${pic(p)}</div><div class="c">${esc(p.name)}<small class="num">${fmt(p.price)}</small></div></button>`}).join('')}</div>
  </div>`};
 function walletCard(dark){return `<div class="wallet ${dark?'dark':''}"><div class="row"><small>Mevcut Bakiyem</small><span class="lvl">${I.diamond} Başlangıç Seviyesi</span></div>
  <div class="row" style="align-items:flex-end"><div><div class="bal num">${fmt(S.balance).replace(',00',',00')}</div><div class="bonus"><b>Bonus</b><span class="num">${fmt(S.bonus)}</span></div></div>${dark?'':'<button class="topup" data-a="topup">Bakiye yükle</button>'}</div>
@@ -437,7 +457,7 @@ function walletCard(dark){return `<div class="wallet ${dark?'dark':''}"><div cla
 
 V.menu=()=>{const q=S.q.trim().toLocaleLowerCase('tr');const t=cartTotals();
  const list=CATS.map(([id,name])=>{const items=P.filter(p=>p.cats.includes(id)&&(!q||p.name.toLocaleLowerCase('tr').includes(q)));if(!items.length)return '';
-  return `<div class="msec" id="sec-${id}"><h3>${name} <small class="muted">(${items.length})</small></h3>${items.map(p=>`<button class="item" data-a="openp" data-v="${p.id}"><div class="txt"><h4>${esc(p.name)}</h4><p>${esc(p.desc)}</p><div class="pr num">${p.from?'<small class="muted" style="font-weight:500">başlayan </small>':''}${fmt(p.price)}${p.badge?` <span class="tag" style="background:var(--red);margin-left:6px">${p.badge}</span>`:''}</div></div><div class="ph">${pic(p)}</div></button>`).join('')}</div>`}).join('');
+  return `<div class="msec" id="sec-${id}"><h3>${name} <small class="muted">(${items.length})</small></h3>${items.map(p=>`<button class="item" data-a="openp" data-v="${p.id}"><div class="txt"><h4>${esc(p.name)}</h4><p>${esc(p.desc)}</p><div class="pr num">${p.old?`<s class="muted" style="font-weight:500;font-size:12px;margin-right:4px">${fmt(p.old)}</s>`:''}${fmt(p.price)}${p.badge?` <span class="tag" style="background:var(--red);margin-left:6px">${p.badge}</span>`:''}</div></div><div class="ph">${pic(p)}</div></button>`).join('')}</div>`}).join('');
  return `<div class="withnav" style="padding-bottom:170px"><div class="topbar" style="position:static;border:0"><h2 style="margin:0">Menü</h2></div>
  <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="q" placeholder="Menüde ara" value="${esc(S.q)}"></div>
  <div class="cats">${CATS.map(([id,n])=>`<button class="${S.cat===id?'on':''}" data-a="cat" data-v="${id}">${n}</button>`).join('')}</div>

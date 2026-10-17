@@ -29,6 +29,14 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Ürün görsellerini indir
+        run: |
+          mkdir -p www/img/ys
+          while read -r f u; do
+            [ -z "$f" ] && continue
+            curl -fsSL --retry 2 "$u" -o "www/img/ys/$f" || echo "Atlandı: $f"
+          done < ci/images.txt
+          ls www/img/ys | wc -l
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
