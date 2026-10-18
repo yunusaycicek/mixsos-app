@@ -26,14 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Ürün görsellerini indir
-        run: |
-          mkdir -p www/img/ys
-          while read -r f u; do
-            [ -z "$f" ] && continue
-            curl -fsSL --retry 2 "$u" -o "www/img/ys/$f" || echo "Atlandı: $f"
-          done < ci/images.txt
-          ls www/img/ys | wc -l
       - name: gh-pages dalına yayınla
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
