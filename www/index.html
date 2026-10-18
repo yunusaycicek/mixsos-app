@@ -118,6 +118,9 @@ h1,h2,h3,h4,p{margin:0}
 .consent u{color:var(--red);text-decoration:underline;font-weight:500}
 .iyz{display:flex;justify-content:center;padding:4px 0 2px}
 .iyz img{height:26px;width:auto}
+.vbx{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 70%;background:#C9862E}
+.pd-hero .vbx{object-position:50% 60%}
+@media (prefers-reduced-motion:reduce){.vbx{animation:none}}
 /* Alt menü */
 #nav{background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 0 calc(6px + var(--bot));flex:none}
 #nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:#9A9495;position:relative}
@@ -420,8 +423,8 @@ const CAMPS=[
 const COUPONS={elit:{title:'Elit Üyelere Özel %10 İndirim',pct:10}};
 const CODES={MIXSOS10:'elit'};
 const BR=[
- {id:'kadikoy',il:'İstanbul',ilce:'Kadıköy',name:'Kadıköy Şubesi',addr:'Osmanağa, Halitağa Cd. No:7c, 34734 Kadıköy / İstanbul',tel:'+90 506 843 54 21',hours:'10:30 - 02:00',open:[10.5,26],x:62,y:44},
- {id:'kocaeli',il:'Kocaeli',ilce:'İzmit',name:'Kocaeli Şubesi',addr:'Adres bilgisi eklenecek',tel:'',hours:'10:30 - 02:00',open:[10.5,26],x:30,y:62}
+ {id:'kadikoy',il:'İstanbul',ilce:'Kadıköy',name:'Kadıköy Şubesi',addr:'Osmanağa, Halitağa Cd. No:7c, 34734 Kadıköy / İstanbul',tel:'0531 483 58 48',hours:'10:30 - 02:00',open:[10.5,26],x:62,y:44},
+ {id:'kocaeli',il:'Kocaeli',ilce:'Körfez',name:'Körfez Şubesi',addr:'Güney Mah. Tuğrul Caddesi No:6 Körfez / Kocaeli',tel:'0262 526 99 99',hours:'10:30 - 02:00',open:[10.5,26],x:30,y:62}
 ];
 const POSET_PRICE=1;
 // Şirket bilgileri: boş alanlar sayfalarda sarı işaretle görünür. Doldurmak için yalnızca burayı düzenle.
@@ -430,7 +433,7 @@ const COMPANY={
  adres:'Yazlık Mah. Süleyman Binek Cad. No: 262 Serdivan / Sakarya',
  vergiDairesi:'Ali Fuat Cebesoy', vergiNo:'0081859416', mersis:'0008185941600001',
  sicil:'Sakarya Ticaret Sicil Müdürlüğü, 38406',
- tel:'+90 506 843 54 21',
+ tel:'0531 483 58 48',
  eposta:'bilgi@mixsos.com',
  kep:'adilezzet@hs01.kep.tr',
  web:'mixsos.com'
@@ -476,7 +479,7 @@ function removeOne(pid){for(let i=S.cart.length-1;i>=0;i--){if(S.cart[i].pid===p
 function playAdd(cb){const L=$('#layer');L.insertAdjacentHTML('beforeend',`<div id="anim"><div class="c"><img src="img/logo-white.png" alt=""></div></div>`);setTimeout(()=>{const a=$('#anim');a&&a.remove();cb&&cb()},760)}
 
 // ---------- Döner Box animasyonu ----------
-const boxHTML=()=>`<span class="dbx" data-dbx><canvas></canvas><img src="img/doner-box-cut.png" alt="Tavuk Döner Box"></span>`;
+const boxHTML=()=>`<video class="vbx" src="img/v/doner-box.mp4" poster="img/v/doner-box.jpg" autoplay muted loop playsinline preload="auto" aria-label="Tavuk Döner Box hazırlanışı"></video>`;
 const BOXES=new Set();
 function startBoxes(){document.querySelectorAll('[data-dbx]').forEach(el=>{if(el._on)return;el._on=1;BOXES.add(boxAnim(el))})}
 function stopBoxes(){BOXES.forEach(b=>b.stop());BOXES.clear()}
@@ -687,7 +690,7 @@ V.doc=()=>{const id=T.params.id;const name=DOCNAMES[id];const upd='Son güncelle
  const buyer=S.user?`<table><tr><td>Ad Soyad</td><td>${esc(S.user.name)}</td></tr><tr><td>Telefon</td><td class="num">+90 ${esc(S.user.phone)}</td></tr><tr><td>Teslimat</td><td>${S.mode==='adres'&&S.address?esc([S.address.mah,S.address.sok,S.address.ilce,S.address.il].filter(Boolean).join(', ')):esc(b.name)+' (şubeden teslim)'}</td></tr></table>`:'<p>Uygulamaya kayıtlı ad, soyad, telefon ve teslimat bilgileri.</p>';
  let h='';
  if(id==='about')h=`<h2>Hakkımızda</h2>
-  <p>Mixsos; tavuk döner, dürüm, burger, box menüler ve atıştırmalıklar sunan bir hızlı servis restoran markasıdır. Sloganımız: “Lezzette ısrarcıyız.”</p>
+  <p>Kral Dönerci adıyla 10 yılda 23 şubeye ulaştık. Ardından bambaşka bir konsept ve anlayışla Mixsos’u kurduk; bugün toplam 40 şubemiz var. Tavuk döner, dürüm, burger, box menüler ve atıştırmalıklarla hizmet veriyoruz. Sloganımız: “Lezzette ısrarcıyız.”</p><p>Ürünlerimiz, Sakarya’daki 5.000 m² üretim tesisimizde veteriner hekim ve gıda mühendislerinin denetiminde üretilir ve soğuk zincirle şubelerimize ulaştırılır.</p>
   <p>Mixsos uygulamasıyla menüyü inceleyebilir, siparişini şubeden teslim almak ya da şubede yemek üzere verebilir, kartla veya Mixsos Cüzdan ile güvenle ödeyebilirsin. Her tavuk döner siparişinde damga kazanır, 10 damgada bir tavuk döneri hediye alırsın.</p>
   <h3>Şubelerimiz</h3><ul>${BR.map(x=>`<li><b>${esc(x.name)}</b>: ${esc(x.addr)}${x.tel?' · <span class="num">'+esc(x.tel)+'</span>':''} · Çalışma saatleri <span class="num">${x.hours}</span></li>`).join('')}</ul>
   <h3>Şirket Bilgileri</h3>${seller}
