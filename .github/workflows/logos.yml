@@ -1,0 +1,28 @@
+name: iyzico logo paketini indir
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/logos.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  logos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Paketi indir ve aç
+        run: |
+          mkdir pkg && cd pkg
+          curl -fsSL -A "Mozilla/5.0" "https://docs.iyzico.com/files/atvFPw0JlPZTWxpJvenn" -o paket.bin
+          file paket.bin
+          if file paket.bin | grep -qi zip; then unzip -q paket.bin -d x && rm paket.bin; fi
+          find . -type f | head -200
+      - name: iyzico-logos dalına koy
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd pkg
+          git init -q -b iyzico-logos
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "iyzico logo paketi"
+          git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" iyzico-logos
