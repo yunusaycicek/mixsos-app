@@ -426,12 +426,13 @@ const BR=[
 const POSET_PRICE=1;
 // Şirket bilgileri: boş alanlar sayfalarda sarı işaretle görünür. Doldurmak için yalnızca burayı düzenle.
 const COMPANY={
- unvan:'',            // Örn. Mixsos Gıda San. ve Tic. Ltd. Şti.
- adres:'',            // Merkez / fatura adresi
- vergiDairesi:'', vergiNo:'', mersis:'',
+ unvan:'Adilezzet Hayvancılık Et ve Et Mamülleri Sanayi Ticaret Limited Şirketi',
+ adres:'Yazlık Mah. Süleyman Binek Cad. No: 262 Serdivan / Sakarya',
+ vergiDairesi:'Ali Fuat Cebesoy', vergiNo:'0081859416', mersis:'0008185941600001',
+ sicil:'Sakarya Ticaret Sicil Müdürlüğü, 38406',
  tel:'+90 506 843 54 21',
- eposta:'',           // Örn. destek@mixsos.com
- kep:'',
+ eposta:'bilgi@mixsos.com',
+ kep:'adilezzet@hs01.kep.tr',
  web:'mixsos.com'
 };
 const co=(k,label)=>COMPANY[k]?esc(COMPANY[k]):`<span class="ph">[${label}]</span>`;
@@ -680,7 +681,7 @@ V.help=()=>{const b=branch();return `${hdr('Yardım Merkezi')}${[['Siparişimi n
  <div class="card"><b style="font-weight:600">${esc(b.name)}</b>${b.tel?`<p class="num" style="margin-top:6px;user-select:all">${esc(b.tel)}</p><button class="btn btn-out sm" style="margin-top:10px" data-a="copy" data-v="${esc(b.tel)}">${I.copy(16)} Numarayı Kopyala</button>`:'<p class="label" style="margin-top:6px">Telefon bilgisi eklenecek.</p>'}</div>`};
 
 V.doc=()=>{const id=T.params.id;const name=DOCNAMES[id];const upd='Son güncelleme: 19.10.2026';
- const seller=`<table><tr><td>Unvan</td><td>${co('unvan','Şirket unvanı')}</td></tr><tr><td>Marka</td><td>Mixsos</td></tr><tr><td>Adres</td><td>${co('adres','Merkez adresi')}</td></tr><tr><td>Vergi dairesi / No</td><td>${co('vergiDairesi','Vergi dairesi')} / ${co('vergiNo','Vergi no')}</td></tr><tr><td>MERSİS No</td><td>${co('mersis','MERSİS no')}</td></tr><tr><td>Telefon</td><td class="num">${co('tel','Telefon')}</td></tr><tr><td>E-posta</td><td>${co('eposta','E-posta')}</td></tr><tr><td>KEP adresi</td><td>${co('kep','KEP adresi')}</td></tr></table>`;
+ const seller=`<table><tr><td>Unvan</td><td>${co('unvan','Şirket unvanı')}</td></tr><tr><td>Marka</td><td>Mixsos</td></tr><tr><td>Adres</td><td>${co('adres','Merkez adresi')}</td></tr><tr><td>Vergi dairesi / No</td><td>${co('vergiDairesi','Vergi dairesi')} / ${co('vergiNo','Vergi no')}</td></tr><tr><td>MERSİS No</td><td>${co('mersis','MERSİS no')}</td></tr><tr><td>Ticaret Sicil No</td><td>${co('sicil','Ticaret sicil no')}</td></tr><tr><td>Telefon</td><td class="num">${co('tel','Telefon')}</td></tr><tr><td>E-posta</td><td>${co('eposta','E-posta')}</td></tr><tr><td>KEP adresi</td><td>${co('kep','KEP adresi')}</td></tr></table>`;
  const t=totals();const b=branch();
  const order=S.cart.length?`<table>${S.cart.map(l=>`<tr><td>${l.qty} × ${esc(prod(l.pid).name)}${l.opts.length?'<br><small>'+l.opts.map(o=>esc(o[1])).join(', ')+'</small>':''}</td><td class="num">${tl(l.unit*l.qty)}</td></tr>`).join('')}${S.poset?`<tr><td>${S.poset} × Poşet</td><td class="num">${tl(S.poset*POSET_PRICE)}</td></tr>`:''}${t.disc?`<tr><td>İndirim</td><td class="num">−${tl(t.disc)}</td></tr>`:''}<tr><td><b>Toplam (KDV dahil)</b></td><td class="num"><b>${tl(t.total)}</b></td></tr></table>`:'<p>Sözleşme konusu ürünler, sipariş sırasında sepet ve ödeme ekranında gösterilen ürünlerdir.</p>';
  const buyer=S.user?`<table><tr><td>Ad Soyad</td><td>${esc(S.user.name)}</td></tr><tr><td>Telefon</td><td class="num">+90 ${esc(S.user.phone)}</td></tr><tr><td>Teslimat</td><td>${S.mode==='adres'&&S.address?esc([S.address.mah,S.address.sok,S.address.ilce,S.address.il].filter(Boolean).join(', ')):esc(b.name)+' (şubeden teslim)'}</td></tr></table>`:'<p>Uygulamaya kayıtlı ad, soyad, telefon ve teslimat bilgileri.</p>';
