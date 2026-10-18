@@ -54,12 +54,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - name: Canlı adresi yaz
+      - name: Uygulamanın yedek kopyasını kabuğa koy
         run: |
-          URL="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
-          if [ -f CNAME ]; then URL="https://$(cat CNAME)/"; fi
-          sed -i "s#__LIVE_URL__#${URL}#" capacitor.config.json
-          echo "Uygulama şu adresi açacak: $URL"
+          rm -rf shell/app && cp -r www shell/app
       - name: Android projesini oluştur
         run: |
           npm install
@@ -80,6 +77,6 @@ jobs:
         with:
           tag_name: latest
           name: Mixsos test sürümü
-          body: "Telefona kurmak için Mixsos.apk dosyasını indir. İçerik güncellemeleri uygulamaya otomatik gelir; bu dosyayı yalnızca yeni sürüm çıktığında tekrar kurman gerekir."
+          body: "Telefona kurmak için Mixsos.apk dosyasını indir. Uygulama içeriği jsDelivr CDN üzerinden her açılışta güncellenir; bu dosyayı yalnızca kabuk değiştiğinde tekrar kurman gerekir."
           files: Mixsos.apk
           make_latest: true

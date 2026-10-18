@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Mixsos</title>
+<style>
+html,body{height:100%;margin:0;background:#000;font-family:system-ui,-apple-system,Roboto,sans-serif}
+#s{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;color:#fff}
+#s img{width:58%;max-width:240px}
+#s i{width:28px;height:28px;border:3px solid rgba(255,255,255,.25);border-top-color:#C8102E;border-radius:50%;animation:r .8s linear infinite}
+#s small{position:absolute;bottom:28px;font-size:12px;opacity:.8}
+@keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="s"><img src="app/img/logo-white.png" alt="Mixsos"><i></i><small>Powered by <b>Lokus Studio</b></small></div>
+<script>
+/*
+ * Mixsos uygulama kabuğu.
+ * Uygulamanın asıl içeriği GitHub'daki gh-pages dalında durur ve jsDelivr CDN'den yüklenir.
+ * 1) Son yayının commit kimliği GitHub API'den alınır (her yayın yeni, değişmez bir CDN adresi demektir).
+ * 2) İçerik cdn.jsdelivr.net/gh/<repo>@<commit>/ adresinden çekilir ve açılır; son sürüm cihazda saklanır.
+ * 3) İnternet yoksa önce saklanan son sürüm, o da yoksa APK'nın içindeki kopya açılır.
+ */
+(function(){
+  var REPO='yunusaycicek/mixsos-app', BRANCH='gh-pages', KEY='mixsos.shell';
+  function timeout(ms){return new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'))},ms)})}
+  function get(url,ms,json){return Promise.race([fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status);return json?r.json():r.text()}),timeout(ms)])}
+  function read(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+  function write(v){try{localStorage.setItem(KEY,JSON.stringify(v))}catch(e){}}
+  function open(html,base){
+    html=html.replace(/<head>/i,'<head><base href="'+base+'">');
+    document.open();document.write(html);document.close();
+  }
+  function fallback(){
+    var c=read();
+    if(c&&c.html){open(c.html,c.base);return}
+    location.replace('app/index.html');
+  }
+  get('https://api.github.com/repos/'+REPO+'/commits/'+BRANCH,4000,true)
+    .then(function(d){return d.sha})
+    .catch(function(){var c=read();return c&&c.sha?c.sha:BRANCH})
+    .then(function(sha){
+      var c=read();
+      var base='https://cdn.jsdelivr.net/gh/'+REPO+'@'+sha+'/';
+      if(c&&c.sha===sha&&c.html){open(c.html,c.base);return}
+      return get(base+'index.html',9000,false).then(function(html){
+        if(html.indexOf('<script')<0)throw new Error('bad');
+        write({sha:sha,base:base,html:html,at:Date.now()});
+        open(html,base);
+      });
+    })
+    .catch(fallback);
+})();
+</script>
+</body>
+</html>

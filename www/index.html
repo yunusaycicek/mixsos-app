@@ -434,7 +434,9 @@ function playAdd(cb){const L=$('#layer');L.insertAdjacentHTML('beforeend',`<div 
 
 // ---------- Yönlendirme ----------
 const TABS=['home','search','cart','camps','account'];
-function go(r,params,opts){opts=opts||{};if(!opts.replace&&!TABS.includes(r))T.stack.push({route:T.route,params:T.params,scroll:$('#view').scrollTop});if(TABS.includes(r))T.stack=[];T.route=r;T.params=params||{};T.sheet=null;render();$('#view').scrollTop=opts.scroll||0}
+function go(r,params,opts){opts=opts||{};if(!opts.replace&&!TABS.includes(r)){T.stack.push({route:T.route,params:T.params,scroll:$('#view').scrollTop});try{history.pushState({mx:1},'')}catch(e){}}if(TABS.includes(r))T.stack=[];T.route=r;T.params=params||{};T.sheet=null;render();$('#view').scrollTop=opts.scroll||0}
+function uiBack(){if(T.stack.length&&history.state&&history.state.mx){history.back()}else back()}
+window.addEventListener('popstate',()=>{if(T.sheet&&!T.stack.length){T.sheet=null;rerender();return}if(T.stack.length)back();else if(T.route!=='home')go('home')});
 function back(){const p=T.stack.pop();if(!p){go('home');return}T.route=p.route;T.params=p.params;T.sheet=null;render();$('#view').scrollTop=p.scroll||0}
 function rerender(){const y=$('#view').scrollTop;render();$('#view').scrollTop=y}
 function needLogin(next){if(S.user)return false;T.afterLogin=next;go('login');return true}
@@ -673,7 +675,7 @@ document.addEventListener('click',e=>{
  if(el.dataset.tab){go(el.dataset.tab);return}
  const a=el.dataset.a,v=el.dataset.v;const p=v&&prod(v);
  switch(a){
-  case 'back':back();break;
+  case 'back':uiBack();break;
   case 'notif':T.sheet='notif';rerender();break;
   case 'qr':go('qr');break;
   case 'branches':T.tmpBranch=S.branch;T.brView='list';T.il=branch().il;go('branches');break;
