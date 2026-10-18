@@ -96,6 +96,28 @@ h1,h2,h3,h4,p{margin:0}
 .dbx img.bump{animation:bump .28s ease-out}
 @keyframes bump{40%{transform:translateX(-50%) scale(1.035,.975)}}
 .pd-hero .dbx img{height:76%!important}
+/* Yasal sayfalar ve güven bandı */
+.doc{background:#fff;margin:10px 16px;border-radius:12px;padding:18px 16px 20px;line-height:1.65;font-size:13.5px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.doc h2{font-size:18px;font-weight:600;line-height:1.3;margin-bottom:4px}
+.doc h3{font-size:14.5px;font-weight:600;margin:18px 0 6px}
+.doc p,.doc li{color:#333}
+.doc p+p{margin-top:8px}
+.doc ul{margin:6px 0;padding-left:20px}
+.doc .meta{font-size:12px;color:var(--muted)}
+.doc table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.doc td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top}
+.doc td:first-child{color:var(--muted);width:42%}
+.ph{background:#FFF1C2;color:#7A5300;border-radius:4px;padding:0 4px;font-weight:500}
+.trust{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 16px 8px}
+.trust img{height:24px;width:auto;max-width:100%}
+.ssl{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ok);font-weight:600}
+.legal-links{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;padding:4px 16px;font-size:11.5px}
+.legal-links button{color:var(--muted);text-decoration:underline}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.5;text-align:left;width:100%}
+.consent .radio{margin-top:1px}
+.consent u{color:var(--red);text-decoration:underline;font-weight:500}
+.iyz{display:flex;justify-content:center;padding:4px 0 2px}
+.iyz img{height:26px;width:auto}
 /* Alt menü */
 #nav{background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 0 calc(6px + var(--bot));flex:none}
 #nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:#9A9495;position:relative}
@@ -402,6 +424,19 @@ const BR=[
  {id:'kocaeli',il:'Kocaeli',ilce:'İzmit',name:'Kocaeli Şubesi',addr:'Adres bilgisi eklenecek',tel:'',hours:'10:30 - 02:00',open:[10.5,26],x:30,y:62}
 ];
 const POSET_PRICE=1;
+// Şirket bilgileri: boş alanlar sayfalarda sarı işaretle görünür. Doldurmak için yalnızca burayı düzenle.
+const COMPANY={
+ unvan:'',            // Örn. Mixsos Gıda San. ve Tic. Ltd. Şti.
+ adres:'',            // Merkez / fatura adresi
+ vergiDairesi:'', vergiNo:'', mersis:'',
+ tel:'+90 506 843 54 21',
+ eposta:'',           // Örn. destek@mixsos.com
+ kep:'',
+ web:'mixsos.com'
+};
+const co=(k,label)=>COMPANY[k]?esc(COMPANY[k]):`<span class="ph">[${label}]</span>`;
+const DOCS={hakkimizda:'about','teslimat-iade':'teslimat',gizlilik:'gizlilik','mesafeli-satis':'mesafeli','on-bilgilendirme':'onbilgi'};
+const DOCNAMES={about:'Hakkımızda',teslimat:'Teslimat ve İade Şartları',gizlilik:'Gizlilik Sözleşmesi',mesafeli:'Mesafeli Satış Sözleşmesi',onbilgi:'Ön Bilgilendirme Formu'};
 
 // ---------- Durum ----------
 const KEY='mixsos.v2';
@@ -482,6 +517,8 @@ function needLogin(next){if(S.user)return false;T.afterLogin=next;go('login');re
 
 // ---------- Parçalar ----------
 const hdr=(title,{back:bk=true,right=''}={})=>`<header class="hdr"><div class="side">${bk?`<button data-a="back" aria-label="Geri">${I.back(24)}</button>`:''}</div><h2>${esc(title)}</h2><div class="side r">${right}</div></header>`;
+function trust(){return `<div class="trust"><img src="img/pay/logo_band_colored.svg" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy"><span class="ssl">${I.lock(14)} 256-bit SSL sertifikası ile korunan güvenli bağlantı</span></div>
+ <div class="legal-links">${Object.entries(DOCNAMES).map(([k,n])=>`<button data-a="doc" data-v="${k}">${n}</button>`).join('')}</div><div class="powered">Powered by <b>Lokus Studio</b></div>`}
 function card(p){const q=qtyOf(p.id);const fav=S.favs.includes(p.id);
  return `<div class="pc"><button class="heart" data-a="fav" data-v="${p.id}" aria-label="Favori">${fav?I.heartF(22):I.heart(22)}</button>${p.isNew?'<span class="badge-new">YENİ</span>':''}
  <div class="im"><button class="imb" data-a="openp" data-v="${p.id}" aria-label="${esc(p.name)}">${p.id==='doner-box'?boxHTML():img(p)}</button>
@@ -505,7 +542,7 @@ V.home=()=>{const b=branch();
  <div class="carousel"><div class="slides" id="slides">${SLIDES.map(s=>`<button class="slide" data-a="opencamp" data-v="${s.camp}"><img src="img/${s.img}" alt=""></button>`).join('')}</div><span class="counter num" id="cnt">1/${SLIDES.length}</span></div>
  ${loyalty()}
  <div class="chips" id="chips">${CATS.map(([id,n])=>`<button class="chip ${T.cat===id?'on':''}" data-a="cat" data-v="${id}">${I[CATIC[id]](16)}${n}</button>`).join('')}</div>
- ${secs}<div class="powered">Powered by <b>Lokus Studio</b></div>`};
+ ${secs}${trust()}`};
 
 V.search=()=>{const q=T.q.trim().toLocaleLowerCase('tr');const res=q?P.filter(p=>(p.name+' '+p.desc).toLocaleLowerCase('tr').includes(q)):[];
  return `${hdr('Arama',{back:false})}<div class="pad" style="padding-top:12px"><div class="promo" style="margin:0">${I.search(20)}<input id="q" placeholder="Ürün ara" value="${esc(T.q)}" autocomplete="off" style="border:0"></div></div>
@@ -547,7 +584,10 @@ V.checkout=()=>{const t=totals();const b=branch();const card=S.cards[0];const fr
  <div class="card" style="padding-bottom:4px"><div style="display:flex;align-items:center;margin-bottom:10px"><b style="flex:1;font-weight:600;font-size:15px;display:flex;gap:8px;align-items:center">${I.gift(20)} Kampanyalar</b><button data-tab="camps" style="font-weight:600;text-decoration:underline;display:flex;align-items:center">Tümü ${I.right(16)}</button></div></div>
  <div class="hscroll" style="margin-top:-14px">${camps.map(([id,tt])=>`<div class="camp ${T.coupon===id?'on':''}"><span class="t">${esc(tt)}</span><button class="btn btn-out sm" data-a="coupon" data-v="${id}">${T.coupon===id?'Kaldır':'Uygula'}</button></div>`).join('')}</div>
  <div class="card num"><b style="font-weight:600;font-size:15px;display:block;margin-bottom:4px">Ödeme Bilgisi</b><div class="kv"><span>Sipariş Tutarı</span><span>${tl(t.sub)}</span></div>${t.disc?`<div class="kv" style="color:var(--ok)"><span>İndirim</span><span>−${tl(t.disc)}</span></div>`:''}<div class="kv"><span>Damga Kazanımı</span><span>${t.stamps} Adet</span></div><div class="kv tot"><span>Toplam</span><span>${tl(t.total)}</span></div></div>
- <div style="height:6px"></div><div class="bottom"><div class="paybar"><span class="t num">${tl(t.total)}</span><button class="btn btn-red" data-a="pay">Ödeme Yap</button></div></div>`};
+ <div class="card"><button class="consent ${T.consent?'on':''}" data-a="consent"><span class="radio sq"></span><span><u data-a="doc" data-v="onbilgi">Ön Bilgilendirme Formu</u>’nu ve <u data-a="doc" data-v="mesafeli">Mesafeli Satış Sözleşmesi</u>’ni okudum, onaylıyorum.</span></button>
+ <p class="label" style="margin-top:10px;line-height:1.5">Siparişler gıda niteliğinde olduğundan cayma hakkı kapsamı dışındadır. Ayrıntılar: <u data-a="doc" data-v="teslimat" style="color:var(--red)">Teslimat ve İade Şartları</u></p></div>
+ <div class="trust" style="padding-top:4px"><img src="img/pay/logo_band_colored.svg" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy"><span class="ssl">${I.lock(14)} 256-bit SSL ile güvenli ödeme</span></div>
+ <div style="height:6px"></div><div class="bottom"><div class="paybar"><span class="t num">${tl(t.total)}</span><button class="btn btn-red" data-a="pay" ${T.consent?'':'aria-disabled="true" style="opacity:.5"'}>Ödeme Yap</button></div></div>`};
 
 V.cardform=()=>{const c=T.card;const amount=T.pay.amount;
  return `${hdr('Kart Bilgileri')}<form class="card" id="cardForm" style="display:flex;flex-direction:column;gap:12px">
@@ -557,8 +597,10 @@ V.cardform=()=>{const c=T.card;const amount=T.pay.amount;
  <label class="f">Kart numarası<input class="input num" id="cno" inputmode="numeric" maxlength="19" value="${esc(c.no.replace(/(.{4})/g,'$1 ').trim())}" autocomplete="off"></label>
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Son kullanma<input class="input num" id="cexp" placeholder="AA/YY" maxlength="5" value="${esc(c.exp)}" autocomplete="off"></label><label class="f">CVC<input class="input num" id="ccvc" inputmode="numeric" maxlength="4" value="${esc(c.cvc)}" autocomplete="off"></label></div>
  <button type="button" class="opt ${c.save?'on':''}" data-a="savecard" style="padding:4px 0"><span class="radio sq"></span><span class="l">Kartımı sonraki siparişler için kaydet</span></button>
- <p class="label" style="display:flex;gap:6px;align-items:center;justify-content:center">${I.lock(14)} 3D Secure ile korunur</p>
- <div class="paybar" style="box-shadow:none;background:var(--bg)"><span class="t num">${tl(amount)}</span><button class="btn btn-red" type="submit">Öde</button></div></form>`};
+ <div class="iyz"><img src="img/pay/iyzico_ile_ode_colored_horizontal.svg" alt="iyzico ile Öde"></div>
+ <p class="label" style="display:flex;gap:6px;align-items:center;justify-content:center">${I.lock(14)} 256-bit SSL ve 3D Secure ile korunur</p>
+ <div class="paybar" style="box-shadow:none;background:var(--bg)"><span class="t num">${tl(amount)}</span><button class="btn btn-red" type="submit">Öde</button></div></form>
+ <div class="trust"><img src="img/pay/logo_band_colored.svg" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy"></div>`};
 
 V.threeds=()=>`${hdr('3D Secure')}<form class="card" id="tdsForm" style="display:flex;flex-direction:column;gap:14px"><h3 style="font-size:18px;font-weight:600">Bankanın doğrulama adımı</h3><p class="label">Canlıda bu sayfayı kartı veren banka gösterir.</p><div class="note">Demo SMS kodu: <b>283126</b></div><input class="input num" id="tds" inputmode="numeric" maxlength="6" placeholder="••••••" style="text-align:center;letter-spacing:10px;font-size:22px" autocomplete="one-time-code"><button class="btn btn-red" type="submit">Onayla</button></form>`;
 
@@ -573,7 +615,7 @@ V.camps=()=>`${hdr('Kampanyalar',{back:false})}
  <form class="promo" id="promoForm"><span style="color:var(--red)">${I.gift(20)}</span><input id="promo" placeholder="Promosyon Kodu Girin" autocapitalize="characters" autocomplete="off"><button class="btn btn-red sm" type="submit">Kaydet</button></form>
  <section class="sec"><h3>Devam Eden Kampanyalar (${CAMPS.length})</h3></section>
  ${CAMPS.map(c=>`<button class="ccard" data-a="opencamp" data-v="${c.id}"><div class="im">${c.img?`<img src="img/${c.img}" alt="" loading="lazy">`:`<div class="cssban" style="background:linear-gradient(120deg,#8E0B17,#C8102E 60%,#E3232F)"><span>${c.css[0]}</span><b>${c.css[1]}</b><span>${c.css[2]}</span></div>`}</div><div class="tt"><span>${esc(c.title)}</span>${I.right(18)}</div></button>`).join('')}
- <div style="height:12px"></div>`;
+ ${trust()}`;
 
 V.camp=()=>{const c=CAMPS.find(x=>x.id===T.params.id);const p=c.pid&&prod(c.pid);
  return `${hdr('Kampanya')}<div style="background:#fff">${c.poster?`<img src="img/${c.poster}.jpg" alt="${esc(c.title)}" style="width:100%">`:`<div class="cssban" style="background:linear-gradient(120deg,#8E0B17,#C8102E 60%,#E3232F);aspect-ratio:16/9;max-width:100%"><span>${c.css[0]}</span><b>${c.css[1]}</b><span>${c.css[2]}</span></div>`}</div>
@@ -590,7 +632,9 @@ V.account=()=>{if(!S.user)return `${hdr('Hesabım',{back:false,right:`<button da
  <button class="hero-r" data-a="opencamp" data-v="damga"><span class="ic">${I.gift(24)}</span><span style="flex:1"><b>Damga Kartım · ${S.stamps%10}/10</b><small>10 döner siparişinde 1 tavuk döner bizden!</small></span>${I.right(18)}</button>
  ${menuRows(true)}`};
 function menuRows(auth){const r=[['share','Arkadaşına Öner','invite',1],['wallet','Mixsos Cüzdan','qr',1],['heart','Favorilerim','favs',1],['bag','Önceki Siparişlerim','orders',1],['card','Kayıtlı Kartlarım','cards',1],['bell','İletişim Tercihleri','prefs',1],['help','Yardım Merkezi','help',0],['store','Şubeler','branches',0]];
- return r.filter(x=>auth||!x[3]).map(([ic,l,a])=>`<button class="row" data-a="${a}">${I[ic](20)}<span class="l">${l}</span>${I.right(18)}</button>`).join('')+(auth?`<button class="row" data-a="logout">${I.logout(20)}<span class="l">Çıkış Yap</span>${I.right(18)}</button>`:'')+`<div class="ver"><span>Uygulama Versiyonu</span><span>1.0.0</span></div><div class="powered">Powered by <b>Lokus Studio</b></div>`}
+ return r.filter(x=>auth||!x[3]).map(([ic,l,a])=>`<button class="row" data-a="${a}">${I[ic](20)}<span class="l">${l}</span>${I.right(18)}</button>`).join('')
+ +`<section class="sec"><h3>Kurumsal</h3></section>`+Object.entries(DOCNAMES).map(([k,n])=>`<button class="row" data-a="doc" data-v="${k}">${I[k==='about'?'store':'note'](20)}<span class="l">${n}</span>${I.right(18)}</button>`).join('')
+ +(auth?`<button class="row" data-a="logout">${I.logout(20)}<span class="l">Çıkış Yap</span>${I.right(18)}</button>`:'')+`<div class="ver"><span>Uygulama Versiyonu</span><span>1.0.0</span></div>${trust()}`}
 
 V.login=()=>`${hdr('Giriş Yap')}<form class="card" id="loginForm" style="display:flex;flex-direction:column;gap:14px;margin-top:16px">
  ${!T.otp?`<h3 style="font-size:19px;font-weight:600">Telefon numaranla devam et</h3><p class="label" style="line-height:1.5">Hesabın yoksa otomatik oluşturulur. Numarana tek kullanımlık doğrulama kodu göndereceğiz.</p>
@@ -635,6 +679,56 @@ V.prefs=()=>`${hdr('İletişim Tercihleri')}${[['push','Anlık bildirim'],['sms'
 V.help=()=>{const b=branch();return `${hdr('Yardım Merkezi')}${[['Siparişimi nasıl iptal ederim?','Hazırlanmaya başlamamış siparişler için şubeyi arayabilirsin.'],['Damgalar ne zaman yüklenir?','Ödeme tamamlandığında tavuk döner ürünlerinin her biri için 1 damga hesabına eklenir.'],['Cüzdana yüklediğim para iade edilir mi?','Cüzdan bakiyesi tüm şubelerde siparişlerde kullanılabilir. İade talepleri için şubeyle iletişime geç.']].map(([q,a])=>`<details class="card"><summary style="font-weight:500;cursor:pointer">${q}</summary><p class="label" style="margin-top:8px;line-height:1.6">${a}</p></details>`).join('')}
  <div class="card"><b style="font-weight:600">${esc(b.name)}</b>${b.tel?`<p class="num" style="margin-top:6px;user-select:all">${esc(b.tel)}</p><button class="btn btn-out sm" style="margin-top:10px" data-a="copy" data-v="${esc(b.tel)}">${I.copy(16)} Numarayı Kopyala</button>`:'<p class="label" style="margin-top:6px">Telefon bilgisi eklenecek.</p>'}</div>`};
 
+V.doc=()=>{const id=T.params.id;const name=DOCNAMES[id];const upd='Son güncelleme: 19.10.2026';
+ const seller=`<table><tr><td>Unvan</td><td>${co('unvan','Şirket unvanı')}</td></tr><tr><td>Marka</td><td>Mixsos</td></tr><tr><td>Adres</td><td>${co('adres','Merkez adresi')}</td></tr><tr><td>Vergi dairesi / No</td><td>${co('vergiDairesi','Vergi dairesi')} / ${co('vergiNo','Vergi no')}</td></tr><tr><td>MERSİS No</td><td>${co('mersis','MERSİS no')}</td></tr><tr><td>Telefon</td><td class="num">${co('tel','Telefon')}</td></tr><tr><td>E-posta</td><td>${co('eposta','E-posta')}</td></tr><tr><td>KEP adresi</td><td>${co('kep','KEP adresi')}</td></tr></table>`;
+ const t=totals();const b=branch();
+ const order=S.cart.length?`<table>${S.cart.map(l=>`<tr><td>${l.qty} × ${esc(prod(l.pid).name)}${l.opts.length?'<br><small>'+l.opts.map(o=>esc(o[1])).join(', ')+'</small>':''}</td><td class="num">${tl(l.unit*l.qty)}</td></tr>`).join('')}${S.poset?`<tr><td>${S.poset} × Poşet</td><td class="num">${tl(S.poset*POSET_PRICE)}</td></tr>`:''}${t.disc?`<tr><td>İndirim</td><td class="num">−${tl(t.disc)}</td></tr>`:''}<tr><td><b>Toplam (KDV dahil)</b></td><td class="num"><b>${tl(t.total)}</b></td></tr></table>`:'<p>Sözleşme konusu ürünler, sipariş sırasında sepet ve ödeme ekranında gösterilen ürünlerdir.</p>';
+ const buyer=S.user?`<table><tr><td>Ad Soyad</td><td>${esc(S.user.name)}</td></tr><tr><td>Telefon</td><td class="num">+90 ${esc(S.user.phone)}</td></tr><tr><td>Teslimat</td><td>${S.mode==='adres'&&S.address?esc([S.address.mah,S.address.sok,S.address.ilce,S.address.il].filter(Boolean).join(', ')):esc(b.name)+' (şubeden teslim)'}</td></tr></table>`:'<p>Uygulamaya kayıtlı ad, soyad, telefon ve teslimat bilgileri.</p>';
+ let h='';
+ if(id==='about')h=`<h2>Hakkımızda</h2>
+  <p>Mixsos; tavuk döner, dürüm, burger, box menüler ve atıştırmalıklar sunan bir hızlı servis restoran markasıdır. Sloganımız: “Lezzette ısrarcıyız.”</p>
+  <p>Mixsos uygulamasıyla menüyü inceleyebilir, siparişini şubeden teslim almak ya da şubede yemek üzere verebilir, kartla veya Mixsos Cüzdan ile güvenle ödeyebilirsin. Her tavuk döner siparişinde damga kazanır, 10 damgada bir tavuk döneri hediye alırsın.</p>
+  <h3>Şubelerimiz</h3><ul>${BR.map(x=>`<li><b>${esc(x.name)}</b>: ${esc(x.addr)}${x.tel?' · <span class="num">'+esc(x.tel)+'</span>':''} · Çalışma saatleri <span class="num">${x.hours}</span></li>`).join('')}</ul>
+  <h3>Şirket Bilgileri</h3>${seller}
+  <h3>Güvenli Alışveriş</h3><p>Uygulama ve web sitemiz 256-bit SSL sertifikasıyla şifrelenmiş bağlantı üzerinden çalışır. Kartlı ödemeler, lisanslı ödeme kuruluşu iyzico altyapısıyla 3D Secure doğrulamasıyla alınır. Kart bilgilerin Mixsos tarafından görülmez ve saklanmaz.</p>`;
+ if(id==='teslimat')h=`<h2>Teslimat ve İade Şartları</h2><p class="meta">${upd}</p>
+  <h3>1. Teslimat Yöntemleri</h3><ul><li><b>Şubeden Al (Gel-Al):</b> Sipariş seçtiğin şubede hazırlanır, hazır olduğunda kasadan teslim alırsın.</li><li><b>Şubede Servis:</b> Ödeme ekranında “Siparişimi şubede yemek istiyorum” seçeneğini işaretlersen siparişin masana servis edilir.</li><li><b>Adrese Teslim:</b> Hizmet verilen bölgelerde kullanılabilir. Teslimat ücreti varsa ödeme öncesinde sepet ekranında ayrıca gösterilir.</li></ul>
+  <h3>2. Hazırlama ve Teslim Süresi</h3><p>Siparişin ödeme onayının ardından şubeye iletilir. Hazırlanma durumu sipariş takip ekranından anlık izlenebilir. Gel-al siparişleri, hazır bildirimi sonrasında şubenin çalışma saatleri içinde teslim alınmalıdır.</p>
+  <h3>3. Cayma Hakkı</h3><p>Mesafeli Sözleşmeler Yönetmeliği’nin 15. maddesinin (1) fıkrasının (c) bendi uyarınca, çabuk bozulabilen gıda ürünlerinin teslimine ilişkin sözleşmelerde cayma hakkı kullanılamaz. Bu nedenle hazırlanmaya başlanan siparişler için cayma hakkı bulunmamaktadır.</p>
+  <h3>4. Sipariş İptali</h3><p>Siparişin hazırlanmaya başlamadan önce şubeyi arayarak iptal talebinde bulunabilirsin. İptal onaylanırsa ödemenin tamamı iade edilir. Hazırlanmaya başlanmış siparişler iptal edilemez.</p>
+  <h3>5. Hatalı, Eksik veya Kusurlu Ürün</h3><p>Teslim aldığın üründe eksiklik, yanlışlık veya kusur olması hâlinde teslim anında ya da en geç 24 saat içinde şubeye veya müşteri hizmetlerine bildirmen hâlinde ürün yeniden hazırlanır ya da bedeli iade edilir. Bu durumda 6502 sayılı Tüketicinin Korunması Hakkında Kanun’dan doğan seçimlik hakların saklıdır.</p>
+  <h3>6. İade Süreci</h3><ul><li>Kartla yapılan ödemelerin iadesi, ödemenin yapıldığı karta iyzico aracılığıyla yapılır. Tutarın kart hesabına yansıma süresi bankana göre değişir.</li><li>Mixsos Cüzdan ile yapılan ödemelerin iadesi cüzdan bakiyesine yapılır.</li><li>Kampanya ve damga hediyesiyle alınan ürünler için nakit iade yapılmaz.</li></ul>
+  <h3>7. İletişim</h3><p>Telefon: <span class="num">${co('tel','Telefon')}</span> · E-posta: ${co('eposta','E-posta')}</p>`;
+ if(id==='gizlilik')h=`<h2>Gizlilik Sözleşmesi ve Kişisel Verilerin Korunması Aydınlatma Metni</h2><p class="meta">${upd}</p>
+  <p>Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) kapsamında veri sorumlusu sıfatıyla ${co('unvan','Şirket unvanı')} (“Mixsos”) tarafından, Mixsos mobil uygulaması ve web sitesini kullananların kişisel verilerinin nasıl işlendiğini açıklamak amacıyla hazırlanmıştır.</p>
+  <h3>1. İşlenen Kişisel Veriler</h3><ul><li><b>Kimlik ve iletişim:</b> Ad, soyad, cep telefonu numarası, e-posta (verirsen).</li><li><b>Müşteri işlem:</b> Sipariş içeriği, seçilen şube, sipariş notu, sipariş geçmişi, damga ve cüzdan hareketleri, favoriler.</li><li><b>Teslimat:</b> Adrese teslim seçilirse teslimat adresi.</li><li><b>İşlem güvenliği:</b> IP adresi, cihaz ve uygulama bilgileri, oturum kayıtları.</li><li><b>Pazarlama:</b> İletişim tercihlerin (yalnızca onay vermen hâlinde).</li></ul>
+  <h3>2. Kart Bilgileri</h3><p>Kart numarası, son kullanma tarihi ve güvenlik kodu Mixsos sunucularına iletilmez ve Mixsos tarafından saklanmaz. Kartlı ödemeler, BDDK lisanslı ödeme kuruluşu iyzico tarafından PCI-DSS standartlarına uygun olarak işlenir. “Kartımı kaydet” seçeneğinde kart bilgisi iyzico tarafından saklanır; uygulamada yalnızca maskelenmiş kart numarası gösterilir.</p>
+  <h3>3. İşleme Amaçları</h3><ul><li>Siparişin alınması, hazırlanması, teslimi ve ödemenin tahsili,</li><li>Üyelik, damga kartı ve cüzdan hizmetlerinin sunulması,</li><li>Talep ve şikâyetlerin yanıtlanması,</li><li>Yasal yükümlülüklerin (fatura, vergi, tüketici mevzuatı) yerine getirilmesi,</li><li>Bilgi güvenliğinin sağlanması ve kötüye kullanımın önlenmesi,</li><li>Onay vermen hâlinde kampanya ve fırsat bildirimlerinin gönderilmesi.</li></ul>
+  <h3>4. Hukuki Sebepler</h3><p>Kişisel veriler; KVKK m.5/2-(c) sözleşmenin kurulması ve ifası, (ç) hukuki yükümlülüğün yerine getirilmesi, (f) meşru menfaat hukuki sebeplerine; pazarlama iletişimi için ise m.5/1 uyarınca açık rızana dayanılarak işlenir.</p>
+  <h3>5. Aktarım</h3><p>Kişisel veriler, yukarıdaki amaçlarla sınırlı olarak; ödeme hizmeti için iyzico’ya, SMS doğrulama ve bildirim hizmet sağlayıcılarına, barındırma ve altyapı hizmeti aldığımız iş ortaklarına ve yasal olarak yetkili kamu kurumlarına aktarılabilir. Yurt dışında bulunan altyapı sağlayıcılarına aktarım KVKK m.9 hükümlerine uygun olarak yapılır.</p>
+  <h3>6. Saklama Süresi</h3><p>Veriler, işleme amacının gerektirdiği süre ve ilgili mevzuatta öngörülen zamanaşımı süreleri boyunca saklanır; süre sonunda silinir, yok edilir veya anonim hâle getirilir. Hesabını silmen hâlinde yasal saklama yükümlülüğü bulunmayan veriler silinir.</p>
+  <h3>7. Çerezler ve Yerel Depolama</h3><p>Uygulama; sepetin, oturumun ve tercihlerin cihazında hatırlanması için yerel depolama kullanır. Bu veriler reklam amacıyla üçüncü kişilerle paylaşılmaz.</p>
+  <h3>8. Güvenlik</h3><p>Uygulama ile sunucular arasındaki tüm iletişim 256-bit SSL/TLS şifrelemesiyle korunur. Verilere erişim yetkili personelle sınırlıdır.</p>
+  <h3>9. Haklarınız</h3><p>KVKK m.11 uyarınca verilerinin işlenip işlenmediğini öğrenme, bilgi talep etme, düzeltilmesini veya silinmesini isteme, aktarıldığı kişileri bilme, itiraz etme ve zararın giderilmesini talep etme haklarına sahipsin. Başvurularını ${co('eposta','E-posta')} adresine veya ${co('adres','Merkez adresi')} adresine yazılı olarak iletebilirsin. Başvurular en geç 30 gün içinde ücretsiz olarak sonuçlandırılır.</p>`;
+ if(id==='mesafeli')h=`<h2>Mesafeli Satış Sözleşmesi</h2><p class="meta">${upd}</p>
+  <h3>Madde 1 – Taraflar</h3><p><b>1.1 Satıcı</b></p>${seller}<p style="margin-top:10px"><b>1.2 Alıcı</b></p>${buyer}
+  <h3>Madde 2 – Konu</h3><p>İşbu sözleşmenin konusu, Alıcı’nın Mixsos mobil uygulaması veya web sitesi üzerinden elektronik ortamda sipariş verdiği aşağıda nitelikleri ve satış fiyatı belirtilen ürünlerin satışı ve teslimine ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin belirlenmesidir.</p>
+  <h3>Madde 3 – Sözleşme Konusu Ürünler</h3>${order}<p>Fiyatlara KDV dahildir.</p>
+  <h3>Madde 4 – Ödeme</h3><p>Ödeme; kredi/banka kartıyla iyzico güvenli ödeme altyapısı ve 3D Secure doğrulamasıyla ya da Mixsos Cüzdan bakiyesiyle peşin olarak yapılır. Ödeme onaylanmadan sipariş hazırlanmaz.</p>
+  <h3>Madde 5 – Teslimat</h3><p>Ürünler, Alıcı’nın sipariş sırasında seçtiği yöntemle (şubeden teslim, şubede servis veya hizmet bölgesindeyse adrese teslim) teslim edilir. Teslimat şartları <b>Teslimat ve İade Şartları</b> sayfasında yer alır ve işbu sözleşmenin ekidir.</p>
+  <h3>Madde 6 – Cayma Hakkı</h3><p>Sözleşme konusu ürünler çabuk bozulabilen gıda ürünleri olduğundan, Mesafeli Sözleşmeler Yönetmeliği m.15/1-(c) uyarınca Alıcı’nın cayma hakkı bulunmamaktadır. Alıcı, siparişi onaylamadan önce bu hususta bilgilendirildiğini kabul eder.</p>
+  <h3>Madde 7 – Satıcının Yükümlülükleri</h3><p>Satıcı, ürünleri siparişe uygun, sağlam ve gıda mevzuatına uygun biçimde hazırlayıp teslim etmekle yükümlüdür. Ayıplı veya eksik ürünlerde Alıcı’nın 6502 sayılı Kanun’dan doğan seçimlik hakları saklıdır.</p>
+  <h3>Madde 8 – Uyuşmazlıkların Çözümü</h3><p>Uyuşmazlıklarda, Ticaret Bakanlığınca her yıl ilan edilen parasal sınırlar dâhilinde Alıcı’nın veya Satıcı’nın yerleşim yerindeki Tüketici Hakem Heyetleri, bu sınırları aşan durumlarda Tüketici Mahkemeleri yetkilidir.</p>
+  <h3>Madde 9 – Yürürlük</h3><p>Alıcı, ödeme ekranında bu sözleşmeyi ve Ön Bilgilendirme Formu’nu okuyup onayladığında sözleşme kurulmuş sayılır. Sözleşmenin bir örneği Alıcı’nın sipariş geçmişinde saklanır.</p>`;
+ if(id==='onbilgi')h=`<h2>Ön Bilgilendirme Formu</h2><p class="meta">${upd}</p>
+  <h3>1. Satıcı Bilgileri</h3>${seller}
+  <h3>2. Alıcı Bilgileri</h3>${buyer}
+  <h3>3. Ürünler ve Toplam Bedel</h3>${order}<p>Tüm fiyatlara vergiler dahildir. Gel-al ve şubede servis siparişlerinde ayrıca teslimat ücreti alınmaz.</p>
+  <h3>4. Ödeme ve Teslimat</h3><p>Ödeme, sipariş anında iyzico güvenli ödeme altyapısıyla kartla veya Mixsos Cüzdan ile yapılır. Sipariş, ödeme onayından sonra seçilen şubede hazırlanır ve seçilen yöntemle teslim edilir.</p>
+  <h3>5. Cayma Hakkı</h3><p>Çabuk bozulabilen gıda ürünleri olması nedeniyle Mesafeli Sözleşmeler Yönetmeliği m.15/1-(c) uyarınca cayma hakkı bulunmamaktadır.</p>
+  <h3>6. Şikâyet ve Başvuru</h3><p>Şikâyetlerini <span class="num">${co('tel','Telefon')}</span> numaralı telefona veya ${co('eposta','E-posta')} adresine iletebilirsin. Parasal sınırlar dâhilinde Tüketici Hakem Heyetlerine, aşan durumlarda Tüketici Mahkemelerine başvurabilirsin.</p>`;
+ return `${hdr(name)}<article class="doc">${h}</article>${trust()}`};
+
 // ---------- Katmanlar ----------
 function sheetHTML(){const s=T.sheet;if(!s)return '';
  const wrap=(h)=>`<div class="scrim" data-a="closesheet"><div class="sheet" data-stop="1"><div class="grab"></div>${h}</div></div>`;
@@ -653,7 +747,7 @@ function sheetHTML(){const s=T.sheet;if(!s)return '';
 // ---------- Render ----------
 function render(){clearTimers();stopBoxes();
  $('#view').innerHTML=V[T.route]();
- const showNav=TABS.includes(T.route)||['favs','orders','cards','prefs','help','track'].includes(T.route);
+ const showNav=TABS.includes(T.route)||['favs','orders','cards','prefs','help','track','doc'].includes(T.route);
  const nav=$('#nav');nav.hidden=!showNav;if(showNav)nav.innerHTML=bottomNav();
  const L=$('#layer');L.querySelectorAll('.scrim').forEach(e=>e.remove());if(T.sheet)L.insertAdjacentHTML('beforeend',sheetHTML());
  after();startBoxes();}
@@ -705,7 +799,7 @@ function finishPay(){
 function placeOrder(){const t=totals();const d=new Date();
  if(T.coupon==='free')S.stamps=Math.max(0,S.stamps-10);
  const o={no:String(100000+Math.floor(Math.random()*900000)),date:d.toLocaleDateString('tr-TR'),lines:S.cart.slice(),total:t.total,disc:t.disc,stamps:t.stamps,branch:S.mode==='adres'?'Adrese Teslim':branch().name,mode:S.mode,dine:T.dineIn,note:T.note,status:0};
- S.orders.unshift(o);S.stamps+=t.stamps;S.cart=[];S.poset=0;T.coupon=null;T.note='';T.noteOpen=false;T.pay=null;T.shownUpsell=false;save();T.stack=[];go('track',{no:o.no})}
+ S.orders.unshift(o);S.stamps+=t.stamps;S.cart=[];S.poset=0;T.coupon=null;T.consent=false;T.note='';T.noteOpen=false;T.pay=null;T.shownUpsell=false;save();T.stack=[];go('track',{no:o.no})}
 
 // ---------- Olaylar ----------
 document.addEventListener('click',e=>{
@@ -742,7 +836,9 @@ document.addEventListener('click',e=>{
   case 'paysheet':T.sheet='pay';rerender();break;
   case 'pw':T.payWith=v;T.sheet=null;rerender();break;
   case 'coupon':T.coupon=T.coupon===v?null:v;rerender();if(T.coupon)toast('Kampanya uygulandı.');break;
-  case 'pay':{const t=totals();
+  case 'consent':T.consent=!T.consent;rerender();break;
+  case 'doc':e.stopPropagation();go('doc',{id:v});break;
+  case 'pay':{if(!T.consent){toast('Devam etmek için sözleşmeleri onayla.',1);const c=document.querySelector('.consent');c&&c.scrollIntoView({behavior:'smooth',block:'center'});break}const t=totals();
     if(T.payWith==='wallet'){if(S.wallet.bal+S.wallet.bonus<t.total){toast('Cüzdan bakiyen yetersiz. Önce para yükle.',1);break}let r=t.total;const fb=Math.min(S.wallet.bonus,r);S.wallet.bonus-=fb;r-=fb;S.wallet.bal-=r;T.pay={kind:'wallet'};placeOrder();break}
     if(T.payWith==='saved'&&S.cards.length){T.pay={kind:'saved',amount:t.total};go('threeds');break}
     T.pay={kind:'card',amount:t.total};go('cardform');break}
@@ -777,8 +873,10 @@ document.addEventListener('click',e=>{
 function closeStory(){const s=$('.story');s&&s.remove();T.storyDone=true;if(T.route==='home')rerender()}
 
 // ---------- Açılış ----------
+function hashDoc(){const h=(location.hash||'').slice(1);return DOCS[h]||null}
+window.addEventListener('hashchange',()=>{const d=hashDoc();if(d)go('doc',{id:d})});
 render();
-(function boot(){const L=$('#layer');
+(function boot(){const deep=hashDoc();if(deep){T.storyDone=true;go('doc',{id:deep});return}const L=$('#layer');
  L.insertAdjacentHTML('beforeend',`<div class="splash"><img class="bg" src="img/b/splash.jpg" alt=""><img class="lg" src="img/logo-white.png" alt="Mixsos"><span class="pw">Powered by <b>Lokus Studio</b></span></div>`);
  setTimeout(()=>{const s=$('.splash');s&&s.remove();
    L.insertAdjacentHTML('beforeend',`<div class="story"><div class="pb"><i></i></div><button class="x" data-a="storyx" aria-label="Kapat">${I.close(28)}</button><button data-a="story" style="flex:1;display:block" aria-label="Kampanyaya git"><img src="img/k5.jpg" alt="Kebabi, yeni ürün"></button><div class="go"><button class="btn btn-red" data-a="story">Hemen Dene</button></div></div>`);
