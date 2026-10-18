@@ -89,6 +89,13 @@ h1,h2,h3,h4,p{margin:0}
 .mini{display:flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:2px 2px 2px 10px;box-shadow:0 2px 8px rgba(0,0,0,.12);font-weight:600}
 .badge-new{position:absolute;left:8px;top:8px;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;transform:rotate(-6deg);z-index:2}
 
+/* Döner Box animasyonu: malzemeler kutunun arkasındaki tuvale düşer, kutunun dolu üst kısmının arkasında kaybolur */
+.dbx{display:block;position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(70% 60% at 50% 70%,#FFF3F0,#fff 70%)}
+.dbx canvas{position:absolute;inset:0;width:100%;height:100%}
+.dbx img{position:absolute;left:50%;bottom:5%;height:68%!important;width:auto!important;max-width:none;transform:translateX(-50%);transform-origin:50% 100%;padding:0!important;object-fit:contain}
+.dbx img.bump{animation:bump .28s ease-out}
+@keyframes bump{40%{transform:translateX(-50%) scale(1.035,.975)}}
+.pd-hero .dbx img{height:76%!important}
 /* Alt menü */
 #nav{background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 0 calc(6px + var(--bot));flex:none}
 #nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:#9A9495;position:relative}
@@ -338,6 +345,7 @@ const DRINK={id:'drink',name:'İçecek Seçimi',req:true,max:1,opts:[['Pepsi (33
 const SOS={id:'sos',name:'Ekstra Sos',req:false,max:3,opts:[['Ketçap',15],['Mayonez',15],['Sarımsaklı Mayonez',15]]};
 const CATS=[['ozel','Sana Özel'],['one','Öne Çıkanlar'],['durum-menu','Dürüm Menüleri'],['doner','Tavuk Dönerler'],['burger','Burgerler'],['box','Box Menüler'],['yan','Yan Ürünler'],['icecek','İçecekler'],['sos','Soslar']];
 const P=[
+ {id:'doner-box',cat:'box',name:'Tavuk Döner Box',price:340,img:'doner-box',desc:'Baharatlı tavuk döner, çıtır patates ve taze marul, Mixsos sos ile kutuda.',g:[SOS],doner:1},
  {id:'kebabi-menu',cat:'durum-menu',name:'Kebabi Dürüm Menü',price:650,img:'kebabi-menu',isNew:1,desc:'100 gr Kebabi dürüm ve kutu içecek.',g:[DRINK,SOS],doner:1},
  {id:'hatay-menu',cat:'durum-menu',name:'Hatay Soslu Dürüm Menü',price:560,img:'hatay-menu',desc:'80 gr Hatay soslu dürüm ve kutu içecek.',g:[DRINK,SOS],doner:1},
  {id:'hatay-mega-menu',cat:'durum-menu',name:'Hatay Soslu Mega Dürüm Menü',price:640,img:'hatay-mega-menu',desc:'120 gr Hatay soslu mega dürüm ve kutu içecek.',g:[DRINK,SOS],doner:1},
@@ -348,7 +356,6 @@ const P=[
  {id:'burrito',cat:'doner',name:'Burrito Dürüm',price:700,img:'burrito',cover:1,desc:'200 gr tavuk döner, cheddar, patates, domates, kaşar ve mor lahana.',g:[SOS],doner:1},
  {id:'chicken-menu',cat:'burger',name:'Chicken Burger Menü',price:510,img:'chicken-menu',desc:'Chicken burger ve kutu içecek.',g:[DRINK,SOS]},
  {id:'chicken',cat:'burger',name:'Chicken Burger',price:340,img:'chicken',desc:'Yumuşak ekmek arasında tavuk, sarımsaklı mayonez, marul ve ketçap.',g:[SOS]},
- {id:'doner-box',cat:'box',name:'Tavuk Döner Box',price:340,img:'doner-box',desc:'Baharatlı tavuk döner, çıtır patates ve taze marul, Mixsos sos ile kutuda.',g:[SOS],doner:1},
  {id:'doner-box-menu',cat:'box',name:'Tavuk Döner Box Menü',price:455,img:'doner-box',desc:'Tavuk Döner Box ve kutu içecek.',g:[DRINK,SOS],doner:1},
  {id:'makar-box',cat:'box',name:'Makar Box',price:340,img:'makar-box',desc:'Pesto soslu penne makarna, tavuk döner ve eriyen kaşar.',g:[SOS]},
  {id:'makar-menu',cat:'box',name:'Makarbox Menü',price:455,img:'makar-menu',desc:'Makar Box ve kutu içecek.',g:[DRINK,SOS]},
@@ -375,8 +382,8 @@ const P=[
  {id:'mayonez',cat:'sos',name:'Mayonez',price:15,img:'mayonez',desc:'Adet.',g:[]},
  {id:'sarimsakli',cat:'sos',name:'Sarımsaklı Mayonez',price:15,img:'sarimsakli',desc:'Adet.',g:[]}
 ];
-const PICKS=['kebabi-menu','hatay-menu','doner-box','makar-box'];
-const FEATURED=['kebabi-durum','burrito','chicken-menu','citir-box','hatay-mega','makar-menu'];
+const PICKS=['doner-box','kebabi-menu','hatay-menu','makar-box'];
+const FEATURED=['doner-box','kebabi-durum','burrito','chicken-menu','citir-box','hatay-mega','makar-menu'];
 const UPSELL=['patates','sogan6','nugget5','tenders2','pepsi','ayran'];
 const SLIDES=[{img:'b/b6.jpg',camp:'kebabi'},{img:'b/b3.jpg',camp:'hatay'},{img:'b/b2.jpg',camp:'burger'},{img:'b/b1.jpg',camp:'box'},{img:'b/b4.jpg',camp:'makarna'}];
 const CAMPS=[
@@ -432,6 +439,38 @@ function addLine(p,sel,qty){
 function removeOne(pid){for(let i=S.cart.length-1;i>=0;i--){if(S.cart[i].pid===pid){S.cart[i].qty--;if(S.cart[i].qty<1)S.cart.splice(i,1);break}}save()}
 function playAdd(cb){const L=$('#layer');L.insertAdjacentHTML('beforeend',`<div id="anim"><div class="c"><img src="img/logo-white.png" alt=""></div></div>`);setTimeout(()=>{const a=$('#anim');a&&a.remove();cb&&cb()},760)}
 
+// ---------- Döner Box animasyonu ----------
+const boxHTML=()=>`<span class="dbx" data-dbx><canvas></canvas><img src="img/doner-box-cut.png" alt="Tavuk Döner Box"></span>`;
+const BOXES=new Set();
+function startBoxes(){document.querySelectorAll('[data-dbx]').forEach(el=>{if(el._on)return;el._on=1;BOXES.add(boxAnim(el))})}
+function stopBoxes(){BOXES.forEach(b=>b.stop());BOXES.clear()}
+function boxAnim(el){
+ const cv=el.querySelector('canvas'),im=el.querySelector('img'),cx=cv.getContext('2d');
+ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let W=0,H=0,dpr=1,raf=0,last=0,spawn=0,parts=[],vis=true,dead=false;
+ const size=()=>{dpr=Math.min(2,devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0)};
+ const kinds=['fry','fry','fry','doner','doner','leaf','parsley','sauce'];
+ const rnd=(a,b)=>a+Math.random()*(b-a);
+ function add(){const k=kinds[Math.floor(Math.random()*kinds.length)];const s=W/320;
+  parts.push({k,x:W*rnd(.34,.66),y:-30*s,vy:rnd(40,90)*s,vx:rnd(-18,18)*s,r:rnd(0,6.28),vr:rnd(-4,4),s:s*rnd(.85,1.15),land:H*rnd(.30,.40),c:rnd(0,1)})}
+ function draw(p){cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.scale(p.s,p.s);
+  if(p.k==='fry'){cx.fillStyle=p.c>.5?'#F6C445':'#F2B632';cx.strokeStyle='#D9962A';cx.lineWidth=1.4;rr(-5,-24,10,48,3);cx.fill();cx.stroke();cx.fillStyle='rgba(255,255,255,.35)';rr(-3,-21,2.5,40,1.2);cx.fill()}
+  else if(p.k==='doner'){cx.fillStyle='#C9783A';cx.beginPath();cx.moveTo(-20,-6);cx.quadraticCurveTo(-6,-16,18,-9);cx.quadraticCurveTo(24,0,16,9);cx.quadraticCurveTo(-4,15,-19,7);cx.quadraticCurveTo(-25,0,-20,-6);cx.fill();cx.strokeStyle='#7A3E17';cx.lineWidth=2.2;cx.lineCap='round';cx.beginPath();cx.moveTo(-12,-4);cx.lineTo(-4,4);cx.moveTo(0,-7);cx.lineTo(8,3);cx.moveTo(10,-5);cx.lineTo(15,2);cx.stroke();cx.fillStyle='rgba(255,220,170,.35)';cx.beginPath();cx.ellipse(-2,-6,10,2.5,0,0,6.28);cx.fill()}
+  else if(p.k==='leaf'){cx.fillStyle='#8CC63F';cx.beginPath();for(let i=0;i<=12;i++){const a=i/12*6.283,r=15+3*Math.sin(i*2.2);cx.lineTo(Math.cos(a)*r*1.2,Math.sin(a)*r*.75)}cx.closePath();cx.fill();cx.strokeStyle='#6AA22B';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(-14,0);cx.lineTo(14,0);cx.stroke()}
+  else if(p.k==='parsley'){cx.fillStyle='#2E8B2E';[[0,-7],[-7,2],[7,2],[0,7]].forEach(([x,y])=>{cx.beginPath();cx.arc(x,y,5.5,0,6.28);cx.fill()});cx.strokeStyle='#2E7A2E';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(0,8);cx.lineTo(0,20);cx.stroke()}
+  else{cx.fillStyle='#FFFDF6';cx.strokeStyle='rgba(0,0,0,.06)';cx.beginPath();cx.moveTo(0,-11);cx.bezierCurveTo(7,-2,8,4,0,8);cx.bezierCurveTo(-8,4,-7,-2,0,-11);cx.fill();cx.stroke()}
+  cx.restore()}
+ function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+ function frame(t){if(dead)return;raf=requestAnimationFrame(frame);if(!vis)return;const dt=Math.min(.05,(t-(last||t))/1000);last=t;
+  if(!W||cv.clientWidth!==W)size();
+  spawn-=dt;if(spawn<=0){add();spawn=rnd(.18,.42)}
+  cx.clearRect(0,0,W,H);
+  parts=parts.filter(p=>{p.vy+=420*(W/320)*dt;p.y+=p.vy*dt;p.x+=p.vx*dt;p.r+=p.vr*dt;
+   if(p.y>p.land){im.classList.remove('bump');void im.offsetWidth;if(Math.random()<.35)im.classList.add('bump');return false}draw(p);return true})}
+ const io=new IntersectionObserver(es=>{vis=es[0].isIntersecting;last=0},{threshold:.05});io.observe(el);
+ size();if(reduce){for(let i=0;i<6;i++){add();parts[i].y=parts[i].land*rnd(.2,.8)}parts.forEach(draw)}else raf=requestAnimationFrame(frame);
+ return {stop(){dead=true;cancelAnimationFrame(raf);io.disconnect()}}}
+
 // ---------- Yönlendirme ----------
 const TABS=['home','search','cart','camps','account'];
 function go(r,params,opts){opts=opts||{};if(!opts.replace&&!TABS.includes(r)){T.stack.push({route:T.route,params:T.params,scroll:$('#view').scrollTop});try{history.pushState({mx:1},'')}catch(e){}}if(TABS.includes(r))T.stack=[];T.route=r;T.params=params||{};T.sheet=null;render();$('#view').scrollTop=opts.scroll||0}
@@ -445,7 +484,7 @@ function needLogin(next){if(S.user)return false;T.afterLogin=next;go('login');re
 const hdr=(title,{back:bk=true,right=''}={})=>`<header class="hdr"><div class="side">${bk?`<button data-a="back" aria-label="Geri">${I.back(24)}</button>`:''}</div><h2>${esc(title)}</h2><div class="side r">${right}</div></header>`;
 function card(p){const q=qtyOf(p.id);const fav=S.favs.includes(p.id);
  return `<div class="pc"><button class="heart" data-a="fav" data-v="${p.id}" aria-label="Favori">${fav?I.heartF(22):I.heart(22)}</button>${p.isNew?'<span class="badge-new">YENİ</span>':''}
- <div class="im"><button class="imb" data-a="openp" data-v="${p.id}" aria-label="${esc(p.name)}">${img(p)}</button>
+ <div class="im"><button class="imb" data-a="openp" data-v="${p.id}" aria-label="${esc(p.name)}">${p.id==='doner-box'?boxHTML():img(p)}</button>
  <div class="add">${q?`<span class="mini"><button data-a="dec" data-v="${p.id}" aria-label="Azalt">${q>1?I.minus(16):I.trash(16)}</button><span class="num">${q}</span><button class="plus" data-a="quick" data-v="${p.id}" aria-label="Ekle">${I.plus(16)}</button></span>`:`<button class="plus" data-a="quick" data-v="${p.id}" aria-label="Sepete ekle">${I.plus(16)}</button>`}</div></div>
  <button class="tx" data-a="openp" data-v="${p.id}"><span class="nm">${esc(p.name)}</span><span class="pr num">${tl(p.price)}</span></button></div>`}
 function bottomNav(){const n=totals().count;const t=[['home','Anasayfa','home'],['search','Arama','search'],['cart','Sepetim','cart'],['camps','Kampanyalar','gift'],['account','Hesabım','user']];
@@ -458,7 +497,7 @@ function loyalty(){const s=S.stamps%10,free=Math.floor(S.stamps/10);
 // ---------- Ekranlar ----------
 const V={};
 V.home=()=>{const b=branch();
- const fav=S.favs.map(prod).filter(Boolean);const ozel=(fav.length?fav:PICKS.map(prod)).slice(0,6);
+ const fav=S.favs.filter(id=>id!=='doner-box').map(prod).filter(Boolean);const ozel=[prod('doner-box')].concat(fav.length?fav:PICKS.slice(1).map(prod)).slice(0,6);
  const secs=CATS.map(([id,name])=>{const items=id==='ozel'?ozel:id==='one'?FEATURED.map(prod):P.filter(p=>p.cat===id);
    return `<section class="sec" id="sec-${id}"><h3>${name}</h3><div class="grid">${items.map(card).join('')}</div></section>`}).join('');
  return `<header class="hdr home"><div class="side"><button data-a="notif" aria-label="Bildirimler">${I.bell(24)}</button></div><div class="logo"><img src="img/logo-white.png" alt="Mixsos"></div><button class="qrbtn" data-a="qr">${I.qr(26)}<span>QR<br>Oluştur</span></button></header>
@@ -478,7 +517,7 @@ V.product=()=>{const p=prod(T.params.id);const fav=S.favs.includes(p.id);const u
  const grp=p.g.map(g=>{const s=T.sel[g.id]||[];const miss=T.tried&&g.req&&!s.length;
   return `<div class="grp" id="g-${g.id}"><div class="gh"><b>${g.name}</b>${g.req?`<span class="pill req ${miss?'err':''}">${I.check(12)} Zorunlu</span>`:`<span class="pill soft">En fazla ${g.max}</span>`}</div>
   ${g.opts.map((o,i)=>`<button class="opt ${s.includes(i)?'on':''}" data-a="pick" data-g="${g.id}" data-i="${i}"><span class="l">${esc(o[0])}${o[1]?`<small class="num">+${tl(o[1])}</small>`:''}</span><span class="radio ${g.max>1?'sq':''}"></span></button>`).join('')}</div>`}).join('');
- return `<div class="pd-hero"><button class="fab l" data-a="back" aria-label="Geri">${I.back(22)}</button><button class="fab r" data-a="fav" data-v="${p.id}" aria-label="Favori">${fav?I.heartF(22):I.heart(22)}</button>${img(p)}</div>
+ return `<div class="pd-hero"><button class="fab l" data-a="back" aria-label="Geri">${I.back(22)}</button><button class="fab r" data-a="fav" data-v="${p.id}" aria-label="Favori">${fav?I.heartF(22):I.heart(22)}</button>${p.id==='doner-box'?boxHTML():img(p)}</div>
  <div class="pd-info"><h1>${esc(p.name)}</h1><p>${esc(p.desc)}</p>${p.doner?`<div class="stamp">${I.gift(18)} Bu ürün ile 1 damga kazanırsın.</div>`:''}
  <div class="stepper"><button class="s l" data-a="pq" data-v="-1" aria-label="Azalt">${I.minus(18)}</button><span class="num" style="font-size:18px">${T.qty}</span><button class="s b" data-a="pq" data-v="1" aria-label="Artır">${I.plus(16)}</button></div></div>
  ${grp}<div style="height:16px"></div>
@@ -612,12 +651,12 @@ function sheetHTML(){const s=T.sheet;if(!s)return '';
  return ''}
 
 // ---------- Render ----------
-function render(){clearTimers();
+function render(){clearTimers();stopBoxes();
  $('#view').innerHTML=V[T.route]();
  const showNav=TABS.includes(T.route)||['favs','orders','cards','prefs','help','track'].includes(T.route);
  const nav=$('#nav');nav.hidden=!showNav;if(showNav)nav.innerHTML=bottomNav();
  const L=$('#layer');L.querySelectorAll('.scrim').forEach(e=>e.remove());if(T.sheet)L.insertAdjacentHTML('beforeend',sheetHTML());
- after();}
+ after();startBoxes();}
 function after(){const r=T.route;
  if(r==='home'){const sl=$('#slides'),cnt=$('#cnt');let i=0;
    sl.addEventListener('scroll',()=>{i=Math.round(sl.scrollLeft/sl.clientWidth);cnt.textContent=(i+1)+'/'+SLIDES.length},{passive:true});

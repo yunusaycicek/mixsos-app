@@ -62,6 +62,10 @@ jobs:
           npm install
           npx cap add android
           npx cap sync android
+      - name: Mixsos ikonu ve açılış görseli
+        run: |
+          pip install --quiet pillow
+          python3 ci/brand.py android/app/src/main/res www/img/logo-white.png
       - name: Sabit test imzası
         run: |
           mkdir -p ~/.android
