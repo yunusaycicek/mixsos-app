@@ -20,8 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # 0) iyzico ödeme sunucusu (Cloudflare Worker). Gerekli secret'lar tanımlı değilse atlanır,
-  #    uygulama demo (sahte) ödemeyle çalışmaya devam eder.
+  # 0) iyzico ödeme sunucusu (Firebase Cloud Functions). FIREBASE_SERVICE_ACCOUNT ve iyzico
+  #    secret'ları tanımlı değilse atlanır; uygulama demo (sahte) ödemeyle çalışmaya devam eder.
   pay:
     runs-on: ubuntu-latest
     outputs:
@@ -32,31 +32,34 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Sunucu menüsünü uygulamadan üret
-        run: node ci/menu.mjs
-      - name: Worker'ı yayınla
+      - name: Firebase'e yükle
         id: deploy
-        working-directory: pay
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           IYZICO_API_KEY: ${{ secrets.IYZICO_API_KEY }}
           IYZICO_SECRET_KEY: ${{ secrets.IYZICO_SECRET_KEY }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$IYZICO_API_KEY" ] || [ -z "$IYZICO_SECRET_KEY" ]; then
+          if [ -z "$SA" ] || [ -z "$IYZICO_API_KEY" ] || [ -z "$IYZICO_SECRET_KEY" ]; then
             echo "Ödeme secret'ları eksik, demo ödeme modunda kalınıyor."; exit 0
           fi
-          npx --yes wrangler@3 deploy 2>&1 | tee deploy.log
-          printf '%s' "$IYZICO_API_KEY" | npx --yes wrangler@3 secret put IYZICO_API_KEY
-          printf '%s' "$IYZICO_SECRET_KEY" | npx --yes wrangler@3 secret put IYZICO_SECRET_KEY
-          URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.workers\.dev' deploy.log | head -1)
-          MODE=$(grep -q 'sandbox' wrangler.toml && echo sandbox || echo live)
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          PROJECT=$(node -e "console.log(require(process.env.GOOGLE_APPLICATION_CREDENTIALS).project_id)")
+          node ci/menu.mjs
+          (cd functions && npm install --omit=dev --no-audit --no-fund)
+          FB="npx --yes firebase-tools@13"
+          printf '%s' "$IYZICO_API_KEY" > "$RUNNER_TEMP/k1"; printf '%s' "$IYZICO_SECRET_KEY" > "$RUNNER_TEMP/k2"
+          $FB functions:secrets:set IYZICO_API_KEY --data-file "$RUNNER_TEMP/k1" --project "$PROJECT" --non-interactive --force
+          $FB functions:secrets:set IYZICO_SECRET_KEY --data-file "$RUNNER_TEMP/k2" --project "$PROJECT" --non-interactive --force
+          rm -f "$RUNNER_TEMP/k1" "$RUNNER_TEMP/k2"
+          $FB deploy --only functions --project "$PROJECT" --non-interactive --force || { sleep 60; $FB deploy --only functions --project "$PROJECT" --non-interactive --force; }
+          rm -f "$RUNNER_TEMP/sa.json"
+          URL="https://europe-west1-$PROJECT.cloudfunctions.net/api"
+          MODE=$(grep -q sandbox functions/.env && echo sandbox || echo live)
           echo "url=$URL" >> "$GITHUB_OUTPUT"; echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "Ödeme sunucusu: $URL ($MODE)"
-          curl -fsS "$URL/health" || true
+          sleep 10; curl -fsS "$URL/health" || true
 
-  # 1) Uygulamanın içeriği: her push'ta GitHub Pages'e çıkar. Telefondaki uygulama bu adresi açtığı için
-  #    değişiklikler APK yeniden kurulmadan, uygulama bir sonraki açılışta görünür.
   site:
     needs: pay
     if: ${{ always() }}

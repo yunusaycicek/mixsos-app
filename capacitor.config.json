@@ -10,7 +10,7 @@
       "*",
       "*.iyzipay.com",
       "*.iyzico.com",
-      "*.workers.dev",
+      "*.cloudfunctions.net",
       "app.mixsos.com"
     ]
   }

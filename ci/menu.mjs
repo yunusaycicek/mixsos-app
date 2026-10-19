@@ -23,5 +23,5 @@ const menu = {
     }])
   ),
 };
-writeFileSync(new URL("../pay/menu.json", import.meta.url), JSON.stringify(menu));
+writeFileSync(new URL("../functions/menu.json", import.meta.url), JSON.stringify(menu));
 console.log(`menu.json: ${Object.keys(menu.products).length} ürün`);
