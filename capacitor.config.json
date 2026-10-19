@@ -4,5 +4,14 @@
   "webDir": "shell",
   "android": {
     "backgroundColor": "#000000"
+  },
+  "server": {
+    "allowNavigation": [
+      "*",
+      "*.iyzipay.com",
+      "*.iyzico.com",
+      "*.workers.dev",
+      "app.mixsos.com"
+    ]
   }
 }

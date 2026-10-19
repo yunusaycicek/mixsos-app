@@ -20,12 +20,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 0) iyzico ödeme sunucusu (Cloudflare Worker). Gerekli secret'lar tanımlı değilse atlanır,
+  #    uygulama demo (sahte) ödemeyle çalışmaya devam eder.
+  pay:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+      mode: ${{ steps.deploy.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Sunucu menüsünü uygulamadan üret
+        run: node ci/menu.mjs
+      - name: Worker'ı yayınla
+        id: deploy
+        working-directory: pay
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          IYZICO_API_KEY: ${{ secrets.IYZICO_API_KEY }}
+          IYZICO_SECRET_KEY: ${{ secrets.IYZICO_SECRET_KEY }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$IYZICO_API_KEY" ] || [ -z "$IYZICO_SECRET_KEY" ]; then
+            echo "Ödeme secret'ları eksik, demo ödeme modunda kalınıyor."; exit 0
+          fi
+          npx --yes wrangler@3 deploy 2>&1 | tee deploy.log
+          printf '%s' "$IYZICO_API_KEY" | npx --yes wrangler@3 secret put IYZICO_API_KEY
+          printf '%s' "$IYZICO_SECRET_KEY" | npx --yes wrangler@3 secret put IYZICO_SECRET_KEY
+          URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.workers\.dev' deploy.log | head -1)
+          MODE=$(grep -q 'sandbox' wrangler.toml && echo sandbox || echo live)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"; echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Ödeme sunucusu: $URL ($MODE)"
+          curl -fsS "$URL/health" || true
+
   # 1) Uygulamanın içeriği: her push'ta GitHub Pages'e çıkar. Telefondaki uygulama bu adresi açtığı için
   #    değişiklikler APK yeniden kurulmadan, uygulama bir sonraki açılışta görünür.
   site:
+    needs: pay
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Ödeme sunucusu adresini uygulamaya yaz
+        run: |
+          sed -i "s#__PAY_API__#${{ needs.pay.outputs.url }}#; s#__PAY_MODE__#${{ needs.pay.outputs.mode }}#" www/index.html
+          grep -o "const PAY_API='[^']*'" www/index.html
       - name: gh-pages dalına yayınla
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}

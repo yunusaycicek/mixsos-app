@@ -1,0 +1,8 @@
+name = "mixsos-pay"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+
+[vars]
+# Canlıya geçerken https://api.iyzipay.com yapılır ve secret'lar canlı anahtarlarla güncellenir.
+IYZICO_BASE_URL = "https://sandbox-api.iyzipay.com"

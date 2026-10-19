@@ -427,6 +427,10 @@ const BR=[
  {id:'kocaeli',il:'Kocaeli',ilce:'Körfez',name:'Körfez Şubesi',addr:'Güney Mah. Tuğrul Caddesi No:6 Körfez / Kocaeli',tel:'0262 526 99 99',hours:'10:30 - 02:00',open:[10.5,26],x:30,y:62}
 ];
 const POSET_PRICE=1;
+// iyzico ödeme sunucusu: yayın sırasında GitHub Actions bu iki değeri doldurur. Boşsa uygulama demo (sahte) ödemeyle çalışır.
+const PAY_API='__PAY_API__';
+const PAY_MODE='__PAY_MODE__';
+const LIVE_PAY=/^https:\/\//.test(PAY_API);
 // Şirket bilgileri: boş alanlar sayfalarda sarı işaretle görünür. Doldurmak için yalnızca burayı düzenle.
 const COMPANY={
  unvan:'Adilezzet Hayvancılık Et ve Et Mamülleri Sanayi Ticaret Limited Şirketi',
@@ -473,7 +477,7 @@ const qtyOf=pid=>S.cart.filter(l=>l.pid===pid).reduce((a,l)=>a+l.qty,0);
 function addLine(p,sel,qty){
   const opts=[];p.g.forEach(g=>(sel[g.id]||[]).forEach(i=>opts.push([g.name,g.opts[i][0]])));
   const key=p.id+'|'+JSON.stringify(opts);const ex=S.cart.find(l=>l.key===key);
-  if(ex)ex.qty+=qty;else S.cart.push({key,pid:p.id,opts,unit:unit(p,sel),qty});save();
+  if(ex)ex.qty+=qty;else S.cart.push({key,pid:p.id,opts,sel:JSON.parse(JSON.stringify(sel)),unit:unit(p,sel),qty});save();
 }
 function removeOne(pid){for(let i=S.cart.length-1;i>=0;i--){if(S.cart[i].pid===pid){S.cart[i].qty--;if(S.cart[i].qty<1)S.cart.splice(i,1);break}}save()}
 function playAdd(cb){const L=$('#layer');L.insertAdjacentHTML('beforeend',`<div id="anim"><div class="c"><img src="img/logo-white.png" alt=""></div></div>`);setTimeout(()=>{const a=$('#anim');a&&a.remove();cb&&cb()},760)}
@@ -574,11 +578,11 @@ V.cart=()=>{const t=totals();const b=branch();
  <section class="sec"><h3>Sana Eşlik Etsin</h3></section><div class="hscroll">${UPSELL.map(prod).map(p=>`<div class="up"><img src="img/p/${p.img}.jpg" alt="${esc(p.name)}" loading="lazy"><span class="n">${esc(p.name)}</span><span class="bt"><span class="num">${tl(p.price)}</span><button class="sqplus" data-a="upadd" data-v="${p.id}" aria-label="Ekle">${I.plus(16)}</button></span></div>`).join('')}</div>
  <div style="height:10px"></div><div class="bottom"><div class="paybar"><span class="t num">${tl(t.total)}</span><button class="btn btn-red" data-a="tocheckout">Devam Et</button></div></div>`};
 
-V.checkout=()=>{const t=totals();const b=branch();const card=S.cards[0];const free=Math.floor(S.stamps/10)>0;
+V.checkout=()=>{const t=totals();const b=branch();const card=LIVE_PAY?null:S.cards[0];const free=Math.floor(S.stamps/10)>0;
  const camps=[['elit',COUPONS.elit.title]];if(free)camps.unshift(['free','Hediye Döner (damga kartından)']);
  const pm=T.payWith==='wallet'?`<div class="row" style="margin:10px 0 0;width:100%;border:1.5px solid var(--line)">${I.wallet(22)}<span class="l">Mixsos Cüzdan<br><small class="muted num">Bakiye: ${tl(S.wallet.bal+S.wallet.bonus)}</small></span></div>`
   :card&&T.payWith==='saved'?`<div class="row" style="margin:10px 0 0;width:100%;border:1.5px solid var(--line)">${I.card(22)}<span class="l">${esc(card.name)}<br><small class="muted num">${esc(card.mask)}</small></span></div><p class="label" style="margin-top:6px">Ödeme seçilen karttan tahsil edilecektir.</p>`
-  :`<p class="label" style="margin-top:8px">Ödeme Yap’a bastığında kart bilgilerini gireceksin.</p>`;
+  :`<p class="label" style="margin-top:8px">${LIVE_PAY?'Ödeme Yap’a bastığında iyzico’nun güvenli ödeme sayfası açılır; kart bilgilerin Mixsos’a iletilmez.':'Ödeme Yap’a bastığında kart bilgilerini gireceksin.'}</p>${LIVE_PAY&&PAY_MODE!=='live'?`<div class="note" style="margin-top:10px"><b>Test ortamı (iyzico sandbox).</b> Gerçek para çekilmez. Test kartı: <span class="num">5528 7900 0000 0008</span> · SKT <span class="num">12/30</span> · CVC <span class="num">123</span> · 3D şifresi <span class="num">283126</span></div>`:''}`;
  return `${hdr('Ödeme')}
  <div class="row" style="margin:0;border-radius:0;width:100%">${I.bag(20)}<span class="l" style="font-weight:600">${esc(S.mode==='adres'&&S.address?'Adrese Teslim · '+S.address.mah:b.name)}</span></div>
  ${S.mode==='gelal'?`<div class="card" style="display:flex;align-items:center;gap:12px"><div style="flex:1"><b style="font-weight:600;font-size:15px">Servis</b><p class="label" style="margin-top:2px">Siparişimi şubede yemek istiyorum.</p></div><button class="toggle ${T.dineIn?'on':''}" data-a="dine" aria-label="Şubede ye"></button></div>`:''}
@@ -738,8 +742,8 @@ function sheetHTML(){const s=T.sheet;if(!s)return '';
  const wrap=(h)=>`<div class="scrim" data-a="closesheet"><div class="sheet" data-stop="1"><div class="grab"></div>${h}</div></div>`;
  if(s==='upsell')return wrap(`<h3>Sana Eşlik Etsin!</h3>${UPSELL.map(prod).map(p=>`<div class="sl"><img src="img/p/${p.img}.jpg" alt=""><div class="t">${esc(p.name)}<span class="num">${tl(p.price)}</span></div><button class="plus" data-a="upadd" data-v="${p.id}" aria-label="Ekle">${I.plus(16)}</button></div>`).join('')}<div class="pad" style="margin-top:12px"><button class="btn btn-red" data-a="gocheckout">Ödemeye Geç</button></div>`);
  if(s==='prev')return wrap(`<h3>Önceki Siparişlerim</h3><div class="hscroll">${S.orders.slice(0,5).map(prevCard).join('')}</div>`);
- if(s==='pay')return wrap(`<h3>Ödeme Yöntemi</h3>${S.cards.map((c,i)=>`<button class="row ${T.payWith==='saved'?'on':''}" data-a="pw" data-v="saved">${I.card(22)}<span class="l">${esc(c.name)}<br><small class="muted num">${esc(c.mask)}</small></span><span class="radio"></span></button>`).slice(0,1).join('')}
-  <button class="row ${T.payWith==='card'?'on':''}" data-a="pw" data-v="card">${I.card(22)}<span class="l">Yeni Kart ile Öde</span><span class="radio"></span></button>
+ if(s==='pay')return wrap(`<h3>Ödeme Yöntemi</h3>${(LIVE_PAY?[]:S.cards).map((c,i)=>`<button class="row ${T.payWith==='saved'?'on':''}" data-a="pw" data-v="saved">${I.card(22)}<span class="l">${esc(c.name)}<br><small class="muted num">${esc(c.mask)}</small></span><span class="radio"></span></button>`).slice(0,1).join('')}
+  <button class="row ${T.payWith==='card'?'on':''}" data-a="pw" data-v="card">${I.card(22)}<span class="l">${LIVE_PAY?'Kredi / Banka Kartı (iyzico)':'Yeni Kart ile Öde'}</span><span class="radio"></span></button>
   <button class="row ${T.payWith==='wallet'?'on':''}" data-a="pw" data-v="wallet">${I.wallet(22)}<span class="l">Mixsos Cüzdan<br><small class="muted num">${tl(S.wallet.bal+S.wallet.bonus)}</small></span><span class="radio"></span></button>`);
  if(s==='topup')return wrap(`<h3>Para Yükle</h3><div class="pad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${[100,250,500,750,1000,2000].map(v=>`<button class="btn ${T.topup===v?'btn-ink':'btn-out'}" style="height:48px;border-radius:12px" data-a="tv" data-v="${v}">${v} TL</button>`).join('')}</div><p class="label pad" style="margin:10px 0">500 TL ve üzeri yüklemelerde %5 bonus.</p><div class="pad"><button class="btn btn-red" data-a="dotopup">Devam · ${tl(T.topup||250)}</button></div>`);
  if(s==='name')return wrap(`<h3>Adın Soyadın</h3><form id="nameForm" class="pad" style="display:flex;flex-direction:column;gap:12px"><input class="input" id="nname" maxlength="40" value="${esc(S.user.name)}"><button class="btn btn-red" type="submit">Kaydet</button></form>`);
@@ -779,6 +783,37 @@ function drawQR(){const c=$('#qrc');if(!c)return;const x=c.getContext('2d');cons
  for(let i=0;i<N;i++)for(let j=0;j<N;j++)if(r()>.52)x.fillRect(i,j,1,1);
  [[0,0],[N-7,0],[0,N-7]].forEach(([a,b])=>{x.fillStyle='#fff';x.fillRect(Math.max(0,a-1),Math.max(0,b-1),9,9);x.fillStyle='#111';x.fillRect(a,b,7,7);x.fillStyle='#fff';x.fillRect(a+1,b+1,5,5);x.fillStyle='#111';x.fillRect(a+2,b+2,3,3)})}
 
+// ---------- iyzico ödeme ----------
+function lineSel(l){if(l.sel)return l.sel;const p=prod(l.pid);const sel={};(l.opts||[]).forEach(([gn,on])=>{const g=p.g.find(x=>x.name===gn);if(!g)return;const i=g.opts.findIndex(o=>o[0]===on);if(i>=0)(sel[g.id]=sel[g.id]||[]).push(i)});return sel}
+function busy(msg){const L=$('#layer');L.insertAdjacentHTML('beforeend',`<div class="scrim" id="busy" style="align-items:center;justify-content:center"><div class="card" style="text-align:center;max-width:300px;display:flex;flex-direction:column;gap:12px;align-items:center"><img src="img/pay/iyzico_ile_ode_colored_horizontal.svg" alt="iyzico ile Öde" style="height:28px"><p style="font-weight:500">${esc(msg)}</p><span class="ssl">${I.lock(14)} 256-bit SSL</span></div></div>`)}
+function unbusy(){const b=$('#busy');b&&b.remove()}
+async function startIyzico(kind,amount){
+ const ret=location.origin+location.pathname;
+ const b=branch();
+ const body=kind==='topup'?{kind,amount,ret,buyer:S.user}
+  :{kind:'order',ret,buyer:S.user,coupon:T.coupon,poset:S.poset,items:S.cart.map(l=>({pid:l.pid,qty:l.qty,sel:lineSel(l)})),
+    address:S.mode==='adres'&&S.address?[S.address.mah,S.address.sok,S.address.ilce,S.address.il].filter(Boolean).join(', '):b.name+', '+b.addr};
+ try{localStorage.setItem('mixsos.pending',JSON.stringify({kind,amount,coupon:T.coupon,note:T.note,dine:T.dineIn,at:Date.now()}))}catch(e){}
+ busy('iyzico güvenli ödeme sayfası açılıyor…');
+ try{
+  const r=await fetch(PAY_API+'/pay/init',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok||!d.paymentPageUrl)throw new Error(d.error||'Ödeme başlatılamadı');
+  if(kind!=='topup'&&Math.abs(d.total-totals().total)>0.01){unbusy();toast('Sepet tutarı güncellendi: '+tl(d.total),1)}
+  location.href=d.paymentPageUrl;
+ }catch(e){unbusy();toast(e.message||'Bağlantı hatası. Tekrar dene.',1)}
+}
+function handlePayReturn(){
+ const q=new URLSearchParams(location.search);const st=q.get('pay');if(!st)return false;
+ let pend=null;try{pend=JSON.parse(localStorage.getItem('mixsos.pending')||'null');localStorage.removeItem('mixsos.pending')}catch(e){}
+ try{history.replaceState(null,'',location.pathname)}catch(e){}
+ T.storyDone=true;
+ if(st==='success'){
+  if(q.get('kind')==='topup'){const a=Number(q.get('amount'))||(pend&&pend.amount)||0;S.wallet.bal+=a;if(a>=500)S.wallet.bonus+=Math.round(a*.05);save();go('qr');toast(tl(a)+' cüzdanına yüklendi.');return true}
+  if(pend){T.coupon=pend.coupon;T.note=pend.note||'';T.dineIn=!!pend.dine}
+  T.pay={kind:'iyzico',paymentId:q.get('pid')};placeOrder();toast('Ödeme alındı. Siparişin şubeye iletildi.');return true}
+ go(S.cart.length?'checkout':'home');if(pend){T.coupon=pend.coupon;T.note=pend.note||'';T.dineIn=!!pend.dine}rerender();toast(q.get('msg')||'Ödeme tamamlanamadı.',1);return true}
+
 // ---------- Formlar ----------
 function loginSubmit(e){e.preventDefault();
  if(!T.otp){const v=$('#phone').value.replace(/\D/g,'').replace(/^0/,'');if(!/^5\d{9}$/.test(v)){toast('Numarayı 5 ile başlayan 10 hane olarak gir.',1);return}T.phone=v;T.otp=true;rerender();toast('Doğrulama kodu gönderildi.');return}
@@ -802,7 +837,7 @@ function finishPay(){
  placeOrder()}
 function placeOrder(){const t=totals();const d=new Date();
  if(T.coupon==='free')S.stamps=Math.max(0,S.stamps-10);
- const o={no:String(100000+Math.floor(Math.random()*900000)),date:d.toLocaleDateString('tr-TR'),lines:S.cart.slice(),total:t.total,disc:t.disc,stamps:t.stamps,branch:S.mode==='adres'?'Adrese Teslim':branch().name,mode:S.mode,dine:T.dineIn,note:T.note,status:0};
+ const o={paymentId:T.pay&&T.pay.paymentId||null,no:String(100000+Math.floor(Math.random()*900000)),date:d.toLocaleDateString('tr-TR'),lines:S.cart.slice(),total:t.total,disc:t.disc,stamps:t.stamps,branch:S.mode==='adres'?'Adrese Teslim':branch().name,mode:S.mode,dine:T.dineIn,note:T.note,status:0};
  S.orders.unshift(o);S.stamps+=t.stamps;S.cart=[];S.poset=0;T.coupon=null;T.consent=false;T.note='';T.noteOpen=false;T.pay=null;T.shownUpsell=false;save();T.stack=[];go('track',{no:o.no})}
 
 // ---------- Olaylar ----------
@@ -844,6 +879,7 @@ document.addEventListener('click',e=>{
   case 'doc':e.stopPropagation();go('doc',{id:v});break;
   case 'pay':{if(!T.consent){toast('Devam etmek için sözleşmeleri onayla.',1);const c=document.querySelector('.consent');c&&c.scrollIntoView({behavior:'smooth',block:'center'});break}const t=totals();
     if(T.payWith==='wallet'){if(S.wallet.bal+S.wallet.bonus<t.total){toast('Cüzdan bakiyen yetersiz. Önce para yükle.',1);break}let r=t.total;const fb=Math.min(S.wallet.bonus,r);S.wallet.bonus-=fb;r-=fb;S.wallet.bal-=r;T.pay={kind:'wallet'};placeOrder();break}
+    if(LIVE_PAY){startIyzico('order');break}
     if(T.payWith==='saved'&&S.cards.length){T.pay={kind:'saved',amount:t.total};go('threeds');break}
     T.pay={kind:'card',amount:t.total};go('cardform');break}
   case 'testcard':T.card=Object.assign(T.card,{name:'Test Kullanıcı',no:'5528790000000008',exp:'12/30',cvc:'123'});rerender();break;
@@ -862,7 +898,7 @@ document.addEventListener('click',e=>{
   case 'newqr':T.qr=String(100000+Math.floor(Math.random()*900000));T.qrLeft=60;rerender();break;
   case 'topup':if(needLogin('qr'))break;T.topup=T.topup||250;T.sheet='topup';rerender();break;
   case 'tv':T.topup=+v;rerender();break;
-  case 'dotopup':T.sheet=null;T.pay={kind:'card',topup:true,amount:T.topup};go('cardform');break;
+  case 'dotopup':if(LIVE_PAY){T.sheet=null;rerender();startIyzico('topup',T.topup);break}T.sheet=null;T.pay={kind:'card',topup:true,amount:T.topup};go('cardform');break;
   case 'mode':S.mode=v;save();rerender();break;
   case 'brview':T.brView=v;rerender();break;
   case 'brpick':T.tmpBranch=v;rerender();break;
@@ -880,7 +916,7 @@ function closeStory(){const s=$('.story');s&&s.remove();T.storyDone=true;if(T.ro
 function hashDoc(){const h=(location.hash||'').slice(1);return DOCS[h]||null}
 window.addEventListener('hashchange',()=>{const d=hashDoc();if(d)go('doc',{id:d})});
 render();
-(function boot(){const deep=hashDoc();if(deep){T.storyDone=true;go('doc',{id:deep});return}const L=$('#layer');
+(function boot(){if(handlePayReturn())return;const deep=hashDoc();if(deep){T.storyDone=true;go('doc',{id:deep});return}const L=$('#layer');
  L.insertAdjacentHTML('beforeend',`<div class="splash"><img class="bg" src="img/b/splash.jpg" alt=""><img class="lg" src="img/logo-white.png" alt="Mixsos"><span class="pw">Powered by <b>Lokus Studio</b></span></div>`);
  setTimeout(()=>{const s=$('.splash');s&&s.remove();
    L.insertAdjacentHTML('beforeend',`<div class="story"><div class="pb"><i></i></div><button class="x" data-a="storyx" aria-label="Kapat">${I.close(28)}</button><button data-a="story" style="flex:1;display:block" aria-label="Kampanyaya git"><img src="img/k5.jpg" alt="Kebabi, yeni ürün"></button><div class="go"><button class="btn btn-red" data-a="story">Hemen Dene</button></div></div>`);
