@@ -19,7 +19,7 @@ concurrency:
 jobs:
   ios:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ios]')
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -48,6 +48,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: En yeni Xcode'u seç
+        run: |
+          X=$(ls -d /Applications/Xcode_*.app | grep -v -i beta | sort -V | tail -n 1)
+          sudo xcode-select -s "$X/Contents/Developer"
+          xcodebuild -version
+          echo "::notice::Kullanılan $(xcodebuild -version | head -1)"
 
       - name: iOS projesini oluştur
         run: |
@@ -89,10 +96,8 @@ jobs:
           }
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
             -destination "generic/platform=iOS" -archivePath "$RUNNER_TEMP/Mixsos.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" TARGETED_DEVICE_FAMILY=1 \
             MARKETING_VERSION="${{ steps.ver.outputs.version }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             archive > "$RUNNER_TEMP/archive.log" 2>&1 || { report "$RUNNER_TEMP/archive.log"; exit 1; }
@@ -112,6 +117,7 @@ jobs:
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>$TEAM_ID</string>
             <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
             <key>uploadSymbols</key><true/>
           </dict></plist>
           EOF
