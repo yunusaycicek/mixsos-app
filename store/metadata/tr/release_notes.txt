@@ -1,0 +1,8 @@
+Mixsos uygulaması baştan yenilendi:
+• Yeni tasarım: menüyü keşfetmek ve sipariş vermek artık çok daha hızlı
+• Menünü kişiselleştir: içeceğini ve ekstra sosunu seç
+• iyzico ile 3D Secure güvenli kartla ödeme
+• Mixsos Cüzdan: bakiye yükle, kasada QR ile öde
+• Damga kartı: 10 tavuk döner siparişine 1 tavuk döner hediye
+• Sipariş takibi: siparişinin durumunu adım adım gör
+• Şubeden al veya şubede ye seçenekleri

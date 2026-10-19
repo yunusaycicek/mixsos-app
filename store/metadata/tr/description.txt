@@ -1,0 +1,12 @@
+Lezzette ısrarcıyız. Mixsos'un tavuk döner, dürüm, burger ve box menüleri artık bir dokunuş uzağında.
+
+• Menüyü keşfet: Kebabi Dürüm, Hatay Soslu Dürüm, Tavuk Döner Box, Makar Box, Chicken Burger ve daha fazlası.
+• Kendi menünü oluştur: içeceğini ve ekstra sosunu seç, yanına patates veya soğan halkası ekle.
+• Güvenle öde: kartla ödemeler iyzico altyapısıyla 3D Secure doğrulamasıyla alınır. Kart bilgilerin Mixsos'a iletilmez.
+• Mixsos Cüzdan: bakiye yükle, kasada QR kodunu okutarak hızlıca öde.
+• Damga topla: her tavuk döner siparişinde 1 damga kazan, 10 damgada bir tavuk döner bizden.
+• Kampanyaları kaçırma: Dev Kampanya fırsatları ve yeni ürünler uygulamada.
+• Siparişini takip et: siparişin alındı, hazırlanıyor, hazır.
+• Şube seç: sana en uygun şubeden teslim al ya da şubede ye.
+
+Mixsos, Kral Dönerci tecrübesiyle kurulan ve bugün 40 şubeye ulaşan bir lezzet markasıdır.

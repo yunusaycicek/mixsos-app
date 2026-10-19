@@ -2,13 +2,14 @@
   "name": "mixsos-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Mixsos mobil sipariş uygulaması (Android kabuğu + canlı web içeriği)",
+  "description": "Mixsos mobil sipari\u015f uygulamas\u0131 (Android kabu\u011fu + canl\u0131 web i\u00e7eri\u011fi)",
   "scripts": {
     "sync": "cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",
-    "@capacitor/core": "^6.2.0"
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.0"

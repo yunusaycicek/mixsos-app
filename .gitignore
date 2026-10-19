@@ -3,3 +3,4 @@ android/
 *.apk
 functions/menu.json
 functions/node_modules/
+ios/
