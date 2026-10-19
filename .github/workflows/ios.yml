@@ -54,8 +54,9 @@ jobs:
           python3 -c "import json;c=json.load(open('capacitor.config.json'));c['appId']='$BUNDLE_ID';json.dump(c,open('capacitor.config.json','w'),indent=2)"
           rm -rf shell/app && cp -r www shell/app
           npm install
-          npx cap add ios
-          npx cap sync ios
+          npx cap add ios > "$RUNNER_TEMP/cap.log" 2>&1 || { grep -iE "error|\[!\]" "$RUNNER_TEMP/cap.log" | head -n 10 | sed 's/^/::error::/'; exit 1; }
+          npx cap sync ios > "$RUNNER_TEMP/cap.log" 2>&1 || { grep -iE "error|\[!\]" "$RUNNER_TEMP/cap.log" | head -n 10 | sed 's/^/::error::/'; exit 1; }
+          ls ios/App
 
       - name: Mixsos ikonu ve açılış görseli
         run: |
@@ -82,6 +83,10 @@ jobs:
 
       - name: Derle ve arşivle
         run: |
+          report() { # $1 = log dosyası: hata satırlarını GitHub uyarısı olarak göster
+            grep -E "error:|error -|ERROR|Error Domain|BUILD FAILED|EXPORT FAILED|\*\* ARCHIVE FAILED|No profiles|Provisioning|requires a provisioning|\[!\]|exception|Unauthorized|forbidden|FORBIDDEN|Could not" "$1" | grep -v "^warning" | sort -u | head -n 12 | while IFS= read -r l; do echo "::error::${l:0:400}"; done
+            tail -n 40 "$1"
+          }
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
             -destination "generic/platform=iOS" -archivePath "$RUNNER_TEMP/Mixsos.xcarchive" \
             -allowProvisioningUpdates \
@@ -90,10 +95,15 @@ jobs:
             DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
             PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" TARGETED_DEVICE_FAMILY=1 \
             MARKETING_VERSION="${{ steps.ver.outputs.version }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
-            archive | tail -n 60
+            archive > "$RUNNER_TEMP/archive.log" 2>&1 || { report "$RUNNER_TEMP/archive.log"; exit 1; }
+          tail -n 15 "$RUNNER_TEMP/archive.log"
 
       - name: App Store Connect'e yükle
         run: |
+          report() { # $1 = log dosyası: hata satırlarını GitHub uyarısı olarak göster
+            grep -E "error:|error -|ERROR|Error Domain|BUILD FAILED|EXPORT FAILED|\*\* ARCHIVE FAILED|No profiles|Provisioning|requires a provisioning|\[!\]|exception|Unauthorized|forbidden|FORBIDDEN|Could not" "$1" | grep -v "^warning" | sort -u | head -n 12 | while IFS= read -r l; do echo "::error::${l:0:400}"; done
+            tail -n 40 "$1"
+          }
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -109,12 +119,17 @@ jobs:
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -n 40
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" > "$RUNNER_TEMP/export.log" 2>&1 || { report "$RUNNER_TEMP/export.log"; exit 1; }
+          tail -n 15 "$RUNNER_TEMP/export.log"
           echo "Yüklendi: sürüm ${{ steps.ver.outputs.version }} (build ${{ github.run_number }}). App Store Connect'te işlenmesi 10–30 dk sürer."
 
       - name: Ekran görüntüleri ve mağaza metinleri
         if: github.event_name == 'push' || inputs.metadata
         run: |
+          report() { # $1 = log dosyası: hata satırlarını GitHub uyarısı olarak göster
+            grep -E "error:|error -|ERROR|Error Domain|BUILD FAILED|EXPORT FAILED|\*\* ARCHIVE FAILED|No profiles|Provisioning|requires a provisioning|\[!\]|exception|Unauthorized|forbidden|FORBIDDEN|Could not" "$1" | grep -v "^warning" | sort -u | head -n 12 | while IFS= read -r l; do echo "::error::${l:0:400}"; done
+            tail -n 40 "$1"
+          }
           mkdir -p "$RUNNER_TEMP/shots/tr"
           cp store/screenshots/tr/*.png "$RUNNER_TEMP/shots/tr/"
           fastlane deliver --api_key_path "$RUNNER_TEMP/keys/api_key.json" \
@@ -122,7 +137,8 @@ jobs:
             --metadata_path store/metadata --screenshots_path "$RUNNER_TEMP/shots" \
             --skip_binary_upload true --overwrite_screenshots true --skip_app_version_update false \
             --submit_for_review false --automatic_release false --run_precheck_before_submit false \
-            --force true
+            --force true > "$RUNNER_TEMP/deliver.log" 2>&1 || { report "$RUNNER_TEMP/deliver.log"; exit 1; }
+          tail -n 20 "$RUNNER_TEMP/deliver.log"
 
       - name: Anahtarları temizle
         if: always()
