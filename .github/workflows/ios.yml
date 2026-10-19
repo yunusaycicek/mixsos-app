@@ -149,9 +149,10 @@ jobs:
           mkdir -p "$RUNNER_TEMP/shots/tr"
           cp store/screenshots/tr/*.png "$RUNNER_TEMP/shots/tr/"
           export FASTLANE_SKIP_UPDATE_CHECK=1 FASTLANE_HIDE_CHANGELOG=1 FASTLANE_DISABLE_COLORS=1 CI=true
+          cd store
           fastlane deliver --api_key_path "$RUNNER_TEMP/keys/api_key.json" \
             --app_identifier "$BUNDLE_ID" --app_version "${{ steps.ver.outputs.version }}" --platform ios \
-            --metadata_path store/metadata --screenshots_path "$RUNNER_TEMP/shots" \
+            --metadata_path "$GITHUB_WORKSPACE/store/metadata" --screenshots_path "$RUNNER_TEMP/shots" \
             --skip_binary_upload true --overwrite_screenshots true --skip_app_version_update false \
             --submit_for_review false --automatic_release false --run_precheck_before_submit false \
             --force true > "$RUNNER_TEMP/deliver.log" 2>&1 || {

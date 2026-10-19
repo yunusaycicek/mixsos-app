@@ -1,0 +1,8 @@
+# Mixsos App Store mağaza bilgileri (fastlane deliver). Değerler GitHub Actions'tan verilir.
+platform("ios")
+force(true)
+skip_binary_upload(true)
+overwrite_screenshots(true)
+submit_for_review(false)
+automatic_release(false)
+run_precheck_before_submit(false)
