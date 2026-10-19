@@ -154,7 +154,11 @@ jobs:
             --metadata_path store/metadata --screenshots_path "$RUNNER_TEMP/shots" \
             --skip_binary_upload true --overwrite_screenshots true --skip_app_version_update false \
             --submit_for_review false --automatic_release false --run_precheck_before_submit false \
-            --force true > "$RUNNER_TEMP/deliver.log" 2>&1 || { sed -E 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/deliver.log" | grep -v "^\s*$" | grep -v "gems/" | grep -vE "^\s*\* \[|Improvements|^-+$|^\+-|^\|" | tail -n 9 | while IFS= read -r l; do echo "::error::${l:0:300}"; done; exit 1; }
+            --force true > "$RUNNER_TEMP/deliver.log" 2>&1 || {
+              sed -E 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/deliver.log" > "$RUNNER_TEMP/d.txt"
+              N=$(grep -n -m1 -E "non-interactive|Error|error" "$RUNNER_TEMP/d.txt" | cut -d: -f1); N=${N:-9999}
+              head -n "$N" "$RUNNER_TEMP/d.txt" | grep -vE "^\s*$|^\s*from |gems/|^\s*\* \[|Improvements|^-+$|^\+-|^\|" | tail -n 9 | while IFS= read -r l; do echo "::error::${l:0:300}"; done
+              exit 1; }
           tail -n 20 "$RUNNER_TEMP/deliver.log"
 
       - name: Anahtarları temizle
