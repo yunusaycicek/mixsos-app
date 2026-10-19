@@ -9,6 +9,10 @@ on:
         description: "Ekran görüntüleri ve mağaza metinleri de güncellensin mi?"
         type: boolean
         default: true
+      build:
+        description: "Uygulama derlenip yüklensin mi?"
+        type: boolean
+        default: true
   push:
     branches: [main]
 
@@ -95,6 +99,7 @@ jobs:
           PY
 
       - name: Derle ve arşivle
+        if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[meta]') || github.event_name == 'workflow_dispatch' && inputs.build
         run: |
           report() { # $1 = log dosyası: hata satırlarını GitHub uyarısı olarak göster
             grep -E "error:|error -|ERROR|Error Domain|BUILD FAILED|EXPORT FAILED|\*\* ARCHIVE FAILED|No profiles|Provisioning|requires a provisioning|\[!\]|exception|Unauthorized|forbidden|FORBIDDEN|Could not" "$1" | grep -v "^warning" | sort -u | head -n 12 | while IFS= read -r l; do echo "::error::${l:0:400}"; done
@@ -108,6 +113,7 @@ jobs:
           tail -n 15 "$RUNNER_TEMP/archive.log"
 
       - name: App Store Connect'e yükle
+        if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[meta]') || github.event_name == 'workflow_dispatch' && inputs.build
         run: |
           report() { # $1 = log dosyası: hata satırlarını GitHub uyarısı olarak göster
             grep -E "error:|error -|ERROR|Error Domain|BUILD FAILED|EXPORT FAILED|\*\* ARCHIVE FAILED|No profiles|Provisioning|requires a provisioning|\[!\]|exception|Unauthorized|forbidden|FORBIDDEN|Could not" "$1" | grep -v "^warning" | sort -u | head -n 12 | while IFS= read -r l; do echo "::error::${l:0:400}"; done
@@ -147,7 +153,7 @@ jobs:
             --metadata_path store/metadata --screenshots_path "$RUNNER_TEMP/shots" \
             --skip_binary_upload true --overwrite_screenshots true --skip_app_version_update false \
             --submit_for_review false --automatic_release false --run_precheck_before_submit false \
-            --force true > "$RUNNER_TEMP/deliver.log" 2>&1 || { report "$RUNNER_TEMP/deliver.log"; exit 1; }
+            --force true > "$RUNNER_TEMP/deliver.log" 2>&1 || { sed -E 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/deliver.log" | grep -v "^\s*$" | grep -v "gems/" | tail -n 25 | while IFS= read -r l; do echo "::error::${l:0:300}"; done; exit 1; }
           tail -n 20 "$RUNNER_TEMP/deliver.log"
 
       - name: Anahtarları temizle
