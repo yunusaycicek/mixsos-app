@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="img/logo-red.png">
+<title>Mixsos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+/* Coffy akışı + Mixsos kimliği: siyah üst bar, kırmızı vurgu, beyaz kartlar, sabit alt menü. Tek (açık) tema, bilinçli. */
+:root{
+  --red:#C8102E; --red-d:#A50D25; --red-t:#FCEBEE;
+  --ink:#111111; --text:#1B1B1B; --muted:#7A7576; --line:#ECE8E8;
+  --card:#FFFFFF; --bg:#F3F1F1; --head:#000000; --ok:#1E9E5A; --ok-t:#E3F5EB; --warn:#FFF4DA;
+  --f:"Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --top:env(safe-area-inset-top,0px); --bot:env(safe-area-inset-bottom,0px);
+  color-scheme: light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:#1a0a0d;color:var(--text);font-family:var(--f);font-size:14px;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input,textarea,select{font:inherit;color:var(--text)}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+img{max-width:100%;display:block}
+#app{position:relative;margin:0 auto;width:100%;max-width:440px;height:100%;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+@media (min-width:600px){body{display:flex;align-items:center;justify-content:center;padding:16px}#app{height:min(100%,900px);border-radius:30px;box-shadow:0 30px 80px rgba(0,0,0,.5)}}
+#view{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+h1,h2,h3,h4,p{margin:0}
+
+/* Üst bar */
+.hdr{background:var(--head);color:#fff;padding:calc(var(--top) + 10px) 16px 12px;display:flex;align-items:center;gap:10px;min-height:56px;position:sticky;top:0;z-index:20}
+.hdr h2{flex:1;text-align:center;font-size:16px;font-weight:500}
+.hdr .side{width:40px;display:flex;align-items:center}
+.hdr .side.r{justify-content:flex-end}
+.hdr.home{padding-right:0}
+.hdr.home .logo{flex:1;display:flex;justify-content:center}
+.hdr.home .logo img{height:34px;width:auto}
+.qrbtn{background:#fff;color:var(--ink);border-radius:12px 0 0 12px;padding:7px 10px 7px 10px;display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;line-height:1.1;text-align:left}
+.ico{display:inline-flex;align-items:center;justify-content:center}
+.branchbar{background:var(--red);color:#fff;display:flex;align-items:center;gap:10px;padding:11px 16px;width:100%;font-weight:600;font-size:14px;text-align:left}
+.branchbar span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Carousel */
+.carousel{position:relative}
+.slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.slides::-webkit-scrollbar{display:none}
+.slide{flex:none;width:100%;aspect-ratio:16/9;scroll-snap-align:start;max-width:100%}
+.slide img{width:100%;height:100%;object-fit:cover}
+.counter{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;border-radius:10px;padding:2px 8px}
+
+/* Damga kartı */
+.loyal{margin:12px 16px 4px;border-radius:12px;overflow:hidden;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.loyal .t{background:var(--ink);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:13px;font-weight:500;width:100%;text-align:left}
+.loyal .t b{font-weight:500;display:flex;gap:6px;align-items:center;font-size:12px}
+.loyal .b{display:flex;align-items:center;gap:12px;padding:12px}
+.loyal .cnt{font-size:20px;font-weight:600;color:var(--text)}
+.loyal .cnt small{color:var(--red);font-size:14px}
+.bar{flex:1;height:10px;background:#EEE9E9;border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--red);border-radius:6px}
+.free{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.2}
+.free .c{width:24px;height:24px;border-radius:50%;border:2px solid var(--red);color:var(--red);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+
+/* Kategori çipleri */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;background:var(--bg);position:sticky;top:calc(var(--top) + 56px);z-index:15;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:flex;align-items:center;gap:6px;background:var(--card);border-radius:20px;padding:7px 13px;font-size:13px;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.chip.on{background:var(--red);color:#fff}
+.sec{padding:4px 16px 8px;scroll-margin-top:calc(var(--top) + 110px)}
+.sec h3{font-size:15px;font-weight:600;margin:10px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Ürün kartı */
+.pc{background:var(--card);border-radius:12px;overflow:hidden;position:relative;text-align:left;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,.05);width:100%}
+.pc .im{position:relative;aspect-ratio:1/1;background:#fff;max-width:100%}
+.pc .imb{display:block;width:100%;height:100%}
+.pc .im img{width:100%;height:100%;object-fit:contain;padding:8px}
+.pc .im img.cover{object-fit:cover;padding:0}
+.pc .tx{padding:6px 12px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.pc .nm{font-size:13.5px;font-weight:600;line-height:1.3;min-height:2.6em}
+.pc .pr{font-size:14px;font-weight:700}
+.heart{position:absolute;top:8px;right:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;z-index:2}
+.add{position:absolute;right:8px;bottom:8px;z-index:2}
+.plus{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center}
+.mini{display:flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:2px 2px 2px 10px;box-shadow:0 2px 8px rgba(0,0,0,.12);font-weight:600}
+.badge-new{position:absolute;left:8px;top:8px;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;transform:rotate(-6deg);z-index:2}
+
+/* Döner Box animasyonu: malzemeler kutunun arkasındaki tuvale düşer, kutunun dolu üst kısmının arkasında kaybolur */
+.dbx{display:block;position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(70% 60% at 50% 70%,#FFF3F0,#fff 70%)}
+.dbx canvas{position:absolute;inset:0;width:100%;height:100%}
+.dbx img{position:absolute;left:50%;bottom:5%;height:68%!important;width:auto!important;max-width:none;transform:translateX(-50%);transform-origin:50% 100%;padding:0!important;object-fit:contain}
+.dbx img.bump{animation:bump .28s ease-out}
+@keyframes bump{40%{transform:translateX(-50%) scale(1.035,.975)}}
+.pd-hero .dbx img{height:76%!important}
+/* Yasal sayfalar ve güven bandı */
+.doc{background:#fff;margin:10px 16px;border-radius:12px;padding:18px 16px 20px;line-height:1.65;font-size:13.5px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.doc h2{font-size:18px;font-weight:600;line-height:1.3;margin-bottom:4px}
+.doc h3{font-size:14.5px;font-weight:600;margin:18px 0 6px}
+.doc p,.doc li{color:#333}
+.doc p+p{margin-top:8px}
+.doc ul{margin:6px 0;padding-left:20px}
+.doc .meta{font-size:12px;color:var(--muted)}
+.doc table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.doc td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top}
+.doc td:first-child{color:var(--muted);width:42%}
+.ph{background:#FFF1C2;color:#7A5300;border-radius:4px;padding:0 4px;font-weight:500}
+.trust{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 16px 8px}
+.trust img{height:24px;width:auto;max-width:100%}
+.ssl{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ok);font-weight:600}
+.legal-links{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;padding:4px 16px;font-size:11.5px}
+.legal-links button{color:var(--muted);text-decoration:underline}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.5;text-align:left;width:100%}
+.consent .radio{margin-top:1px}
+.consent u{color:var(--red);text-decoration:underline;font-weight:500}
+.iyz{display:flex;justify-content:center;padding:4px 0 2px}
+.iyz img{height:26px;width:auto}
+.vbx{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 70%;background:#C9862E}
+.pd-hero .vbx{object-position:50% 60%}
+@media (prefers-reduced-motion:reduce){.vbx{animation:none}}
+/* Alt menü */
+#nav{background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 0 calc(6px + var(--bot));flex:none}
+#nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:#9A9495;position:relative}
+#nav button.on{color:var(--red);font-weight:600}
+.nb{position:absolute;top:-4px;left:calc(50% + 4px);background:var(--red);color:#fff;font-size:10px;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;font-weight:600}
+
+/* Genel kart ve satırlar */
+.card{background:var(--card);border-radius:12px;margin:10px 16px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:10px;margin:8px 16px;padding:14px;width:calc(100% - 32px);text-align:left;font-size:13.5px;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.row .l{flex:1}
+.pad{padding:0 16px}
+.label{font-size:12px;color:var(--muted)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:26px;font-weight:500;font-size:15px;width:100%}
+.btn-red{background:var(--red);color:#fff}
+.btn-red[disabled]{opacity:.45}
+.btn-out{border:1.5px solid #D9D4D4;background:#fff;color:var(--text)}
+.btn-ink{background:var(--ink);color:#fff}
+.sm{height:36px;font-size:12.5px;border-radius:18px;padding:0 16px;width:auto}
+.bottom{position:sticky;bottom:0;z-index:12;background:var(--bg);padding:10px 16px calc(12px)}
+.paybar{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:30px;padding:6px 6px 6px 20px;box-shadow:0 -2px 18px rgba(0,0,0,.08)}
+.paybar .t{font-size:20px;font-weight:600;flex:none}
+.paybar .btn{flex:1}
+.input{width:100%;height:48px;border:1.5px solid var(--line);border-radius:12px;padding:0 14px;background:#fff;font-size:15px}
+.input:focus{outline:none;border-color:var(--red)}
+textarea.input{height:84px;padding:12px 14px;resize:none}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
+.note{background:var(--warn);color:#6A4A00;font-size:12px;line-height:1.5;border-radius:10px;padding:10px 12px}
+.pill{font-size:11px;font-weight:600;border-radius:12px;padding:3px 9px;display:inline-flex;align-items:center;gap:4px}
+.pill.req{background:var(--ok);color:#fff}
+.pill.req.err{background:var(--red)}
+.pill.soft{background:#EEE;color:var(--muted)}
+.radio{width:22px;height:22px;border-radius:50%;border:1.5px solid #C9C3C4;flex:none;display:inline-flex;align-items:center;justify-content:center}
+.on>.radio,.on .radio{border:2px solid var(--ink)}
+.on>.radio::after,.on .radio::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--ink)}
+.radio.sq{border-radius:6px}
+.on .radio.sq{background:var(--ink)}
+.on .radio.sq::after{width:9px;height:5px;border-radius:0;background:none;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.toggle{width:44px;height:26px;border-radius:13px;background:#D6D1D2;position:relative;flex:none;transition:background .2s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on{background:var(--red)}
+.toggle.on::after{left:21px}
+.kv{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0}
+.kv.tot{font-weight:600;font-size:15px;border-top:1px solid var(--line);margin-top:4px;padding-top:10px}
+.hscroll{display:flex;gap:10px;overflow-x:auto;padding:2px 16px 10px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.stepper{display:flex;align-items:center;gap:12px;font-weight:600}
+.stepper .s{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.stepper .s.b{background:var(--ink);color:#fff}
+.stepper .s.l{color:#9A9495}
+
+/* Ürün detayı */
+.pd-hero{position:relative;background:#fff;aspect-ratio:1/0.82;max-width:100%}
+.pd-hero img{width:100%;height:100%;object-fit:contain;padding:18px}
+.pd-hero img.cover{object-fit:cover;padding:0}
+.fab{position:absolute;top:calc(var(--top) + 12px);width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;z-index:3}
+.fab.l{left:16px;background:var(--red);color:#fff}
+.fab.r{right:16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.pd-info{background:#fff;padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.pd-info h1{font-size:20px;font-weight:600}
+.pd-info p{font-size:12.5px;color:var(--muted);line-height:1.55}
+.stamp{display:flex;align-items:center;gap:8px;background:var(--red-t);color:var(--red-d);border-radius:10px;padding:8px 10px;font-size:12px;font-weight:500}
+.grp{background:#fff;margin-top:8px}
+.grp .gh{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 6px}
+.grp .gh b{font-size:15px;font-weight:600}
+.grp .gh .pill{flex:none}
+.opt{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;text-align:left;font-size:13.5px;font-weight:500}
+.opt .l{flex:1}
+.opt small{display:block;color:var(--muted);font-size:11.5px;font-weight:400}
+
+/* Sepet */
+.ci{background:#fff;border-radius:12px;margin:10px 16px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ci h4{font-size:15px;font-weight:600;margin-bottom:6px}
+.ci .o{font-size:12px;color:var(--muted);line-height:1.6}
+.ci .o b{color:var(--text);font-weight:500}
+.ci .r{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.ci .p{color:var(--red);font-weight:600;font-size:15px}
+.up{flex:none;width:44%;max-width:180px;background:#fff;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.05);text-align:left}
+.up img{aspect-ratio:1.3/1;object-fit:contain;width:100%}
+.up .n{font-size:12px;font-weight:600;line-height:1.3;min-height:2.6em}
+.up .bt{display:flex;justify-content:space-between;align-items:center;font-size:11.5px}
+.sqplus{width:30px;height:30px;border-radius:8px;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center}
+.camp{flex:none;width:72%;max-width:260px;border:1.5px solid var(--line);border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px;background:#fff}
+.camp .t{flex:1;font-size:12.5px;font-weight:500;line-height:1.35}
+.camp.on{border-color:var(--red);background:var(--red-t)}
+
+/* Kampanyalar */
+.ccard{display:block;width:calc(100% - 32px);margin:10px 16px;background:#fff;border-radius:12px;overflow:hidden;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ccard .im{aspect-ratio:16/7;max-width:100%;overflow:hidden}
+.ccard .im img{width:100%;height:100%;object-fit:cover}
+.ccard .tt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;font-size:14px;font-weight:500}
+.cssban{height:100%;display:flex;flex-direction:column;justify-content:center;padding:0 22px;color:#fff;gap:4px}
+.cssban b{font-size:30px;font-weight:700;line-height:1}
+.cssban span{font-size:13px;font-weight:500;opacity:.9}
+.promo{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;margin:12px 16px;padding:8px 8px 8px 14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.promo input{flex:1;border:0;border-bottom:1px solid var(--line);height:36px;outline:none;font-size:13px;min-width:0}
+
+/* Hesabım */
+.info{background:#fff;border-radius:12px;margin:10px 16px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.info .l{flex:1}
+.info .l small{display:block;font-size:12px;color:var(--muted)}
+.info .l b{font-size:16px;font-weight:600}
+.edit{width:34px;height:34px;border-radius:50%;border:1.5px solid #D9D4D4;display:flex;align-items:center;justify-content:center}
+.hero-r{background:var(--red);color:#fff;border-radius:12px;margin:10px 16px;padding:14px;display:flex;align-items:center;gap:12px;width:calc(100% - 32px);text-align:left}
+.hero-r .ic{width:44px;height:44px;border-radius:50%;background:#fff;color:var(--red);display:flex;align-items:center;justify-content:center;flex:none}
+.hero-r b{display:block;font-weight:600}
+.hero-r small{font-size:11.5px;opacity:.9}
+.ver{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;padding:8px 16px 24px}
+
+/* QR */
+.qrwrap{background:#fff;flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 16px}
+.qrwrap p{text-align:center;font-size:14px;font-weight:500;max-width:28ch;line-height:1.45}
+.qrwrap canvas{width:200px;height:200px;image-rendering:pixelated}
+.qcode{font-size:22px;font-weight:600;letter-spacing:8px}
+.dots{display:flex;align-items:center;gap:3px}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--red)}
+.dots i.off{background:#DDD}
+.wal{background:#fff;margin-top:8px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.wal .r{display:flex;align-items:center}
+.wal .r>div{flex:1}
+.wal .r>div+div{border-left:1px solid var(--line);padding-left:16px;display:flex;align-items:center;gap:8px;font-size:13px}
+.wal b{font-size:24px;font-weight:600}
+
+/* Şube seç */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#fff;border-radius:26px;padding:4px;margin:0 16px 14px}
+.seg button{height:42px;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;color:var(--muted)}
+.seg button.on{background:var(--red);color:#fff}
+.selects{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 4px;background:#fff}
+.selects select{height:46px;border:1.5px solid var(--line);border-radius:12px;padding:0 12px;background:#fff;font-weight:500}
+.bc{display:block;width:calc(100% - 32px);margin:10px 16px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;text-align:left}
+.bc.on{border-color:var(--ink)}
+.bc .h{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+.bc .h .nm{flex:1}
+.bc .mi{width:22px;height:22px;border-radius:50%;background:var(--red-t);color:var(--red);display:flex;align-items:center;justify-content:center}
+.bc p{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:8px}
+.bc .hrs{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-top:10px}
+.openp{font-size:11px;font-weight:600;color:var(--ok);background:var(--ok-t);padding:3px 8px;border-radius:8px}
+.closedp{font-size:11px;font-weight:600;color:var(--muted);background:#EEE;padding:3px 8px;border-radius:8px}
+.map{position:relative;height:300px;background:#E9EEE6;overflow:hidden}
+.map>svg{width:100%;height:100%}
+.msearch{position:absolute;left:16px;right:16px;top:12px;background:#fff;border-radius:24px;height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--muted);font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.mpill{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:12.5px;font-weight:500;border-radius:20px;padding:9px 16px}
+
+/* Katmanlar */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:flex-end}
+.sheet{background:var(--bg);width:100%;border-radius:22px 22px 0 0;max-height:86%;overflow-y:auto;padding:10px 0 calc(16px + var(--bot))}
+.sheet .grab{width:44px;height:4px;border-radius:2px;background:#444;margin:4px auto 12px}
+.sheet h3{text-align:center;font-size:20px;font-weight:600;margin-bottom:10px}
+.sl{display:flex;align-items:center;gap:12px;background:#fff;margin:8px 16px;border-radius:12px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.sl img{width:70px;height:56px;object-fit:contain;flex:none}
+.sl .t{flex:1;font-size:13px;font-weight:600;display:flex;flex-direction:column;gap:6px}
+.sl .t span{font-weight:500}
+.prev{flex:none;width:78%;max-width:280px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.prev .d{font-size:13px;font-weight:500;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.prev .i{font-size:12.5px;color:var(--muted);min-height:3.2em;line-height:1.5}
+#toast{pointer-events:none;position:absolute;left:12px;right:12px;top:calc(var(--top) + 10px);background:var(--ink);color:#fff;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:500;z-index:90;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:tin .25s ease}
+#toast .ck{width:26px;height:26px;border-radius:50%;background:var(--ok);display:flex;align-items:center;justify-content:center;flex:none}
+#toast.err .ck{background:var(--red)}
+@keyframes tin{from{transform:translateY(-20px);opacity:0}}
+#anim{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);pointer-events:none}
+#anim .c{width:150px;height:150px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 14px rgba(255,255,255,.35),0 0 0 16px rgba(200,16,46,.6);animation:pop .75s cubic-bezier(.2,.9,.3,1.2) forwards}
+#anim img{width:84px}
+@keyframes pop{0%{transform:scale(.3);opacity:0}45%{transform:scale(1.05);opacity:1}80%{transform:scale(1)}100%{transform:scale(.6) translateY(260px);opacity:0}}
+.splash{position:absolute;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.splash .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;animation:kb 2.4s ease-out forwards}
+.splash .lg{position:relative;width:62%;max-width:260px;animation:fin .8s .2s both}
+.splash .pw{position:absolute;bottom:calc(28px + var(--bot));color:#fff;font-size:12px;opacity:.85}
+@keyframes kb{from{transform:scale(1.25)}to{transform:scale(1.05)}}
+@keyframes fin{from{opacity:0;transform:translateY(12px)}}
+.story{position:absolute;inset:0;z-index:95;background:#000;display:flex;flex-direction:column}
+.story img{width:100%;height:100%;object-fit:cover}
+.story .x{position:absolute;right:14px;top:calc(var(--top) + 22px);width:40px;height:40px;color:#fff;display:flex;align-items:center;justify-content:center;z-index:2}
+.story .pb{position:absolute;left:12px;right:12px;top:calc(var(--top) + 10px);height:3px;background:rgba(255,255,255,.35);border-radius:2px;overflow:hidden;z-index:2}
+.story .pb i{display:block;height:100%;background:#fff;animation:prog 6s linear forwards}
+.story .go{position:absolute;left:16px;right:16px;bottom:calc(20px + var(--bot))}
+@keyframes prog{from{width:0}to{width:100%}}
+.empty{padding:50px 24px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty h3{color:var(--text);font-size:17px;font-weight:600}
+.track .st{display:flex;gap:12px;position:relative;padding-bottom:20px}
+.track .st:last-child{padding-bottom:0}
+.track .d{width:28px;height:28px;border-radius:50%;background:#E8E3E3;color:#fff;display:flex;align-items:center;justify-content:center;flex:none;z-index:1}
+.track .st.done .d{background:var(--ok)}
+.track .st.cur .d{background:var(--red);animation:pulse 1.4s infinite}
+.track .st::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:#E8E3E3}
+.track .st.done::before{background:var(--ok)}
+.track .st:last-child::before{display:none}
+.track b{display:block;font-weight:600}
+.track small{color:var(--muted);font-size:12px}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(200,16,46,.45)}70%{box-shadow:0 0 0 10px rgba(200,16,46,0)}100%{box-shadow:0 0 0 0 rgba(200,16,46,0)}}
+.powered{text-align:center;font-size:11.5px;color:var(--muted);padding:6px 0 14px}
+.powered b{color:var(--text);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <main id="view"></main>
+  <nav id="nav" hidden></nav>
+  <div id="layer"></div>
+  <div id="toast" hidden></div>
+</div>
+<script>
+"use strict";
+// ---------- İkonlar ----------
+const sv=(p,s=22,w=1.9,f='none')=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const I={
+ home:s=>sv('<path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>',s),
+ search:s=>sv('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',s),
+ cart:s=>sv('<path d="M3 4h2l2.2 10.5a1.5 1.5 0 001.5 1.2h8.4a1.5 1.5 0 001.5-1.1L21 8H6"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',s),
+ gift:s=>sv('<rect x="3" y="9" width="18" height="12" rx="1.5"/><path d="M3 13h18M12 9v12M12 9C10 5 6.5 5 6.5 7.2S10 9 12 9zm0 0c2-4 5.5-4 5.5-1.8S14 9 12 9z"/>',s),
+ user:s=>sv('<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5"/>',s),
+ bell:s=>sv('<path d="M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20.5a2 2 0 004 0"/>',s),
+ qr:s=>sv('<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM14 19.5h1.5M19 14h1.5"/>',s),
+ bag:s=>sv('<path d="M5 8h14l-1 12.5a1 1 0 01-1 .9H7a1 1 0 01-1-.9z"/><path d="M9 8V6.5a3 3 0 016 0V8"/>',s),
+ chev:s=>sv('<path d="M6 9l6 6 6-6"/>',s),
+ right:s=>sv('<path d="M9 6l6 6-6 6"/>',s),
+ back:s=>sv('<path d="M20 12H4M10 6l-6 6 6 6"/>',s),
+ heart:s=>sv('<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0112 7a4.3 4.3 0 017.5 2.8C19.5 15.4 12 20 12 20z"/>',s),
+ heartF:s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="#E3262F" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0112 7a4.3 4.3 0 017.5 2.8C19.5 15.4 12 20 12 20z"/></svg>`,
+ plus:s=>sv('<path d="M12 5v14M5 12h14"/>',s,2.6),
+ minus:s=>sv('<path d="M5 12h14"/>',s,2.6),
+ trash:s=>sv('<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/>',s),
+ check:s=>sv('<path d="M5 12.5l4.5 4.5L19 7.5"/>',s,2.8),
+ close:s=>sv('<path d="M6 6l12 12M18 6L6 18"/>',s,2.2),
+ edit:s=>sv('<path d="M4 20h4L19 9l-4-4L4 16z"/>',s),
+ wallet:s=>sv('<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/>',s),
+ card:s=>sv('<rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="M2.5 10h19"/>',s),
+ clock:s=>sv('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',s),
+ help:s=>sv('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M5.6 5.6l3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9"/>',s),
+ store:s=>sv('<path d="M4 9.5V20h16V9.5M3 9.5L5 4h14l2 5.5a3 3 0 01-6 0 3 3 0 01-6 0 3 3 0 01-6 0zM10 20v-5h4v5"/>',s),
+ logout:s=>sv('<path d="M14 4h5a1 1 0 011 1v14a1 1 0 01-1 1h-5M10 16l4-4-4-4M14 12H3"/>',s),
+ share:s=>sv('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5 1.6 0 3 .4 4.1 1.3M17 13v7M13.5 16.5h7"/>',s),
+ note:s=>sv('<path d="M5 4h14v16H5zM8.5 9h7M8.5 13h7M8.5 17h4"/>',s),
+ bike:s=>sv('<circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l3-7h5l4 7M9 10l-1.5-3H5M14 10l1-3h3"/>',s),
+ list:s=>sv('<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',s,2.2),
+ refresh:s=>sv('<path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/>',s),
+ star:s=>sv('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',s),
+ fire:s=>sv('<path d="M12 21c-4 0-7-2.8-7-6.6 0-3.7 3-5.4 4-9.4 1.7 1.5 2.6 3.2 2.8 5 1-.6 1.7-1.6 2-3 2.3 2 4.2 4.6 4.2 7.6 0 3.6-2.6 6.4-6 6.4z"/>',s),
+ pin:s=>sv('<path d="M12 21s-7-6.7-7-12a7 7 0 0114 0c0 5.3-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',s),
+ lock:s=>sv('<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>',s),
+ copy:s=>sv('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/>',s)
+};
+const CATIC={ozel:'user',one:'star','durum-menu':'fire',doner:'fire',burger:'bag',box:'bag',yan:'bag',icecek:'bag',sos:'bag'};
+
+// ---------- Veri ----------
+// Menü ve fiyatlar: Yemeksepeti › Mixsos sayfasından. Görseller img/p/ altında.
+const DRINK={id:'drink',name:'İçecek Seçimi',req:true,max:1,opts:[['Pepsi (33 cl.)',0],['Pepsi Zero Sugar (33 cl.)',0],['Lipton Ice Tea (33 cl.)',0],['Yedigün (33 cl.)',0],['7UP (33 cl.)',0]]};
+const SOS={id:'sos',name:'Ekstra Sos',req:false,max:3,opts:[['Ketçap',15],['Mayonez',15],['Sarımsaklı Mayonez',15]]};
+const CATS=[['ozel','Sana Özel'],['one','Öne Çıkanlar'],['durum-menu','Dürüm Menüleri'],['doner','Tavuk Dönerler'],['burger','Burgerler'],['box','Box Menüler'],['yan','Yan Ürünler'],['icecek','İçecekler'],['sos','Soslar']];
+const P=[
+ {id:'doner-box',cat:'box',name:'Tavuk Döner Box',price:340,img:'doner-box',desc:'Baharatlı tavuk döner, çıtır patates ve taze marul, Mixsos sos ile kutuda.',g:[SOS],doner:1},
+ {id:'kebabi-menu',cat:'durum-menu',name:'Kebabi Dürüm Menü',price:650,img:'kebabi-menu',isNew:1,desc:'100 gr Kebabi dürüm ve kutu içecek.',g:[DRINK,SOS],doner:1},
+ {id:'hatay-menu',cat:'durum-menu',name:'Hatay Soslu Dürüm Menü',price:560,img:'hatay-menu',desc:'80 gr Hatay soslu dürüm ve kutu içecek.',g:[DRINK,SOS],doner:1},
+ {id:'hatay-mega-menu',cat:'durum-menu',name:'Hatay Soslu Mega Dürüm Menü',price:640,img:'hatay-mega-menu',desc:'120 gr Hatay soslu mega dürüm ve kutu içecek.',g:[DRINK,SOS],doner:1},
+ {id:'burrito-menu',cat:'durum-menu',name:'Burrito Tavuk Döner Dürüm Menü',price:800,img:'burrito-menu',desc:'200 gr tavuk döner burrito dürüm ve kutu içecek.',g:[DRINK,SOS],doner:1},
+ {id:'kebabi-durum',cat:'doner',name:'Kebabi Dürüm',price:500,img:'kebabi-durum',cover:1,isNew:1,desc:'100 gr tavuk döner, sumaklı soğan, domates, maydanoz ve sarımsaklı mayonez.',g:[SOS],doner:1},
+ {id:'hatay-durum',cat:'doner',name:'Hatay Soslu Tavuk Döner Dürüm',price:400,img:'hatay-durum',desc:'80 gr tavuk döner, patates kızartması, Hatay sos ve sarımsaklı mayonez.',g:[SOS],doner:1},
+ {id:'hatay-mega',cat:'doner',name:'Hatay Soslu Mega Dürüm',price:510,img:'hatay-mega',desc:'120 gr tavuk döner, patates kızartması, Hatay sos ve sarımsaklı mayonez.',g:[SOS],doner:1},
+ {id:'burrito',cat:'doner',name:'Burrito Dürüm',price:700,img:'burrito',cover:1,desc:'200 gr tavuk döner, cheddar, patates, domates, kaşar ve mor lahana.',g:[SOS],doner:1},
+ {id:'chicken-menu',cat:'burger',name:'Chicken Burger Menü',price:510,img:'chicken-menu',desc:'Chicken burger ve kutu içecek.',g:[DRINK,SOS]},
+ {id:'chicken',cat:'burger',name:'Chicken Burger',price:340,img:'chicken',desc:'Yumuşak ekmek arasında tavuk, sarımsaklı mayonez, marul ve ketçap.',g:[SOS]},
+ {id:'doner-box-menu',cat:'box',name:'Tavuk Döner Box Menü',price:455,img:'doner-box',desc:'Tavuk Döner Box ve kutu içecek.',g:[DRINK,SOS],doner:1},
+ {id:'makar-box',cat:'box',name:'Makar Box',price:340,img:'makar-box',desc:'Pesto soslu penne makarna, tavuk döner ve eriyen kaşar.',g:[SOS]},
+ {id:'makar-menu',cat:'box',name:'Makarbox Menü',price:455,img:'makar-menu',desc:'Makar Box ve kutu içecek.',g:[DRINK,SOS]},
+ {id:'citir-box',cat:'box',name:'Çıtır Box',price:340,img:'citir-box',cover:1,desc:'Özel kaplamalı çıtır tenders, kutuda.',g:[SOS]},
+ {id:'citir-box-menu',cat:'box',name:'Çıtır Box Menü',price:455,img:'citir-box',cover:1,desc:'Çıtır Box ve kutu içecek.',g:[DRINK,SOS]},
+ {id:'patates',cat:'yan',name:'Patates Kızartması',price:100,img:'patates',desc:'Parmak patates.',g:[]},
+ {id:'patates-b',cat:'yan',name:'Patates Kızartması (Büyük Boy)',price:120,img:'patates-b',desc:'Büyük boy parmak patates.',g:[]},
+ {id:'sogan6',cat:'yan',name:'Soğan Halkası (6 Adet)',price:100,img:'sogan6',desc:'Çıtır soğan halkası.',g:[]},
+ {id:'sogan8',cat:'yan',name:'Soğan Halkası (8 Adet)',price:125,img:'sogan8',desc:'Çıtır soğan halkası.',g:[]},
+ {id:'nugget5',cat:'yan',name:'Tavuk Nugget (5 Adet)',price:135,img:'nugget5',desc:'Tek porsiyon.',g:[]},
+ {id:'nugget8',cat:'yan',name:'Tavuk Nugget (8 Adet)',price:175,img:'nugget8',desc:'Tek porsiyon.',g:[]},
+ {id:'tenders2',cat:'yan',name:'Tenders (2 Adet)',price:150,img:'tenders2',desc:'Tek porsiyon.',g:[]},
+ {id:'tenders4',cat:'yan',name:'Tenders (4 Adet)',price:200,img:'tenders4',desc:'Tek porsiyon.',g:[]},
+ {id:'kroket5',cat:'yan',name:'Tavuk Kroket (5 Adet)',price:180,img:'kroket5',desc:'Tek porsiyon.',g:[]},
+ {id:'kroket8',cat:'yan',name:'Tavuk Kroket (8 Adet)',price:200,img:'kroket8',desc:'Tek porsiyon.',g:[]},
+ {id:'pepsi',cat:'icecek',name:'Pepsi (33 cl.)',price:125,img:'pepsi',desc:'Kutu içecek.',g:[]},
+ {id:'pepsi-zero',cat:'icecek',name:'Pepsi Zero Sugar (33 cl.)',price:125,img:'pepsi-zero',desc:'Kutu içecek.',g:[]},
+ {id:'lipton',cat:'icecek',name:'Lipton Ice Tea (33 cl.)',price:125,img:'lipton',desc:'Kutu içecek.',g:[]},
+ {id:'yedigun',cat:'icecek',name:'Yedigün (33 cl.)',price:125,img:'yedigun',desc:'Kutu içecek.',g:[]},
+ {id:'7up',cat:'icecek',name:'7UP (33 cl.)',price:125,img:'7up',desc:'Kutu içecek.',g:[]},
+ {id:'ayran',cat:'icecek',name:'Ayran (28,5 cl.)',price:85,img:'ayran',desc:'Büyük boy.',g:[]},
+ {id:'su',cat:'icecek',name:'Su (50 cl.)',price:35,img:'su',desc:'Pet şişe.',g:[]},
+ {id:'ketcap',cat:'sos',name:'Ketçap',price:15,img:'ketcap',desc:'Adet.',g:[]},
+ {id:'mayonez',cat:'sos',name:'Mayonez',price:15,img:'mayonez',desc:'Adet.',g:[]},
+ {id:'sarimsakli',cat:'sos',name:'Sarımsaklı Mayonez',price:15,img:'sarimsakli',desc:'Adet.',g:[]}
+];
+const PICKS=['doner-box','kebabi-menu','hatay-menu','makar-box'];
+const FEATURED=['doner-box','kebabi-durum','burrito','chicken-menu','citir-box','hatay-mega','makar-menu'];
+const UPSELL=['patates','sogan6','nugget5','tenders2','pepsi','ayran'];
+const SLIDES=[{img:'b/b6.jpg',camp:'kebabi'},{img:'b/b3.jpg',camp:'hatay'},{img:'b/b2.jpg',camp:'burger'},{img:'b/b1.jpg',camp:'box'},{img:'b/b4.jpg',camp:'makarna'}];
+const CAMPS=[
+ {id:'kebabi',img:'b/b6.jpg',poster:'k6',title:'Kebabi + İçecek 150 TL',pid:'kebabi-menu'},
+ {id:'hatay',img:'b/b3.jpg',poster:'k3',title:'Hatay Usulü Soslu Döner, 100 TL’den başlayan fiyatlarla',pid:'hatay-durum'},
+ {id:'burger',img:'b/b2.jpg',poster:'k2',title:'Chicken Burger ve Efsane Burger, 90 TL’den başlayan fiyatlarla',pid:'chicken'},
+ {id:'box',img:'b/b1.jpg',poster:'k1',title:'Yoğurt Soslu Döner Box',pid:'doner-box'},
+ {id:'makarna',img:'b/b4.jpg',poster:'k4',title:'Pesto Soslu Dönerli Makarna',pid:'makar-box'},
+ {id:'damga',css:['10 DÖNER’E','1 DÖNER HEDİYE','Her tavuk döner siparişinde 1 damga'],title:'10 Tavuk Döner Siparişine 1 Tavuk Döner Bizden!'},
+ {id:'elit',css:['ELİT ÜYELERE ÖZEL','%10 İNDİRİM','Uygulamadan verilen siparişlerde'],title:'Elit Üyelere Özel %10 İndirim'}
+];
+const COUPONS={elit:{title:'Elit Üyelere Özel %10 İndirim',pct:10}};
+const CODES={MIXSOS10:'elit'};
+const BR=[
+ {id:'kadikoy',il:'İstanbul',ilce:'Kadıköy',name:'Kadıköy Şubesi',addr:'Osmanağa, Halitağa Cd. No:7c, 34734 Kadıköy / İstanbul',tel:'0531 483 58 48',hours:'10:30 - 02:00',open:[10.5,26],x:62,y:44},
+ {id:'kocaeli',il:'Kocaeli',ilce:'Körfez',name:'Körfez Şubesi',addr:'Güney Mah. Tuğrul Caddesi No:6 Körfez / Kocaeli',tel:'0262 526 99 99',hours:'10:30 - 02:00',open:[10.5,26],x:30,y:62}
+];
+const POSET_PRICE=1;
+// iyzico ödeme sunucusu: yayın sırasında GitHub Actions bu iki değeri doldurur. Boşsa uygulama demo (sahte) ödemeyle çalışır.
+const PAY_API='';
+const PAY_MODE='';
+const LIVE_PAY=/^https:\/\//.test(PAY_API);
+// Şirket bilgileri: boş alanlar sayfalarda sarı işaretle görünür. Doldurmak için yalnızca burayı düzenle.
+const COMPANY={
+ unvan:'Adilezzet Hayvancılık Et ve Et Mamülleri Sanayi Ticaret Limited Şirketi',
+ adres:'Yazlık Mah. Süleyman Binek Cad. No: 262 Serdivan / Sakarya',
+ vergiDairesi:'Ali Fuat Cebesoy', vergiNo:'0081859416', mersis:'0008185941600001',
+ sicil:'Sakarya Ticaret Sicil Müdürlüğü, 38406',
+ tel:'0531 483 58 48',
+ eposta:'bilgi@mixsos.com',
+ kep:'adilezzet@hs01.kep.tr',
+ web:'mixsos.com'
+};
+const co=(k,label)=>COMPANY[k]?esc(COMPANY[k]):`<span class="ph">[${label}]</span>`;
+const DOCS={hakkimizda:'about','teslimat-iade':'teslimat',gizlilik:'gizlilik','mesafeli-satis':'mesafeli','on-bilgilendirme':'onbilgi'};
+const DOCNAMES={about:'Hakkımızda',teslimat:'Teslimat ve İade Şartları',gizlilik:'Gizlilik Sözleşmesi',mesafeli:'Mesafeli Satış Sözleşmesi',onbilgi:'Ön Bilgilendirme Formu'};
+
+// ---------- Durum ----------
+const KEY='mixsos.v2';
+const D={user:null,cart:[],poset:0,favs:[],orders:[],wallet:{bal:0,bonus:0},stamps:0,cards:[],branch:'kadikoy',mode:'gelal',address:null,codes:[],prefs:{sms:true,mail:false,push:true}};
+let S=Object.assign({},D);
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign({},D,JSON.parse(raw))}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({user:S.user,cart:S.cart,poset:S.poset,favs:S.favs,orders:S.orders.slice(0,20),wallet:S.wallet,stamps:S.stamps,cards:S.cards,branch:S.branch,mode:S.mode,address:S.address,codes:S.codes,prefs:S.prefs}))}catch(e){}}
+const T={route:'home',params:{},stack:[],sel:{},qty:1,tried:false,q:'',coupon:null,dineIn:false,noteOpen:false,note:'',payWith:'card',card:{name:'',no:'',exp:'',cvc:'',save:true},otp:false,phone:'',tmpBranch:null,brView:'list',il:'İstanbul',qr:null,qrLeft:60,slide:0,sheet:null,pay:null,cat:'ozel',showPrev:true,shownUpsell:false,storyDone:false};
+
+// ---------- Yardımcılar ----------
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tl=n=>{const v=Math.round(n*100)/100;return (Number.isInteger(v)?v.toLocaleString('tr-TR'):v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}))+' TL'};
+const prod=id=>P.find(p=>p.id===id);
+const branch=()=>BR.find(b=>b.id===S.branch)||BR[0];
+const img=(p,cls)=>`<img src="img/p/${p.img}.jpg" alt="${esc(p.name)}" loading="lazy" class="${p.cover?'cover':''} ${cls||''}">`;
+const isOpen=b=>{const d=new Date();let h=d.getHours()+d.getMinutes()/60;if(h<6)h+=24;return h>=b.open[0]&&h<b.open[1]};
+let timers=[];const clearTimers=()=>{timers.forEach(t=>{clearInterval(t);clearTimeout(t)});timers=[]};
+function toast(msg,err){const t=$('#toast');t.className=err?'err':'';t.innerHTML=`<span class="ck">${err?I.close(15):I.check(15)}</span><span>${esc(msg)}</span>`;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2200)}
+function unit(p,sel){let t=p.price;p.g.forEach(g=>(sel[g.id]||[]).forEach(i=>t+=g.opts[i][1]));return t}
+function totals(){
+  const sub=S.cart.reduce((a,l)=>a+l.unit*l.qty,0)+S.poset*POSET_PRICE;
+  let disc=0;const c=T.coupon&&COUPONS[T.coupon];
+  if(c)disc=Math.round(S.cart.reduce((a,l)=>a+l.unit*l.qty,0)*c.pct)/100;
+  if(T.coupon==='free'){const d=S.cart.filter(l=>prod(l.pid).doner).map(l=>prod(l.pid).price);if(d.length)disc=Math.min(...d)}
+  const stamps=S.cart.filter(l=>prod(l.pid).doner).reduce((a,l)=>a+l.qty,0);
+  return {sub,disc,total:Math.max(0,sub-disc),count:S.cart.reduce((a,l)=>a+l.qty,0),stamps};
+}
+const qtyOf=pid=>S.cart.filter(l=>l.pid===pid).reduce((a,l)=>a+l.qty,0);
+function addLine(p,sel,qty){
+  const opts=[];p.g.forEach(g=>(sel[g.id]||[]).forEach(i=>opts.push([g.name,g.opts[i][0]])));
+  const key=p.id+'|'+JSON.stringify(opts);const ex=S.cart.find(l=>l.key===key);
+  if(ex)ex.qty+=qty;else S.cart.push({key,pid:p.id,opts,sel:JSON.parse(JSON.stringify(sel)),unit:unit(p,sel),qty});save();
+}
+function removeOne(pid){for(let i=S.cart.length-1;i>=0;i--){if(S.cart[i].pid===pid){S.cart[i].qty--;if(S.cart[i].qty<1)S.cart.splice(i,1);break}}save()}
+function playAdd(cb){const L=$('#layer');L.insertAdjacentHTML('beforeend',`<div id="anim"><div class="c"><img src="img/logo-white.png" alt=""></div></div>`);setTimeout(()=>{const a=$('#anim');a&&a.remove();cb&&cb()},760)}
+
+// ---------- Döner Box animasyonu ----------
+const boxHTML=()=>`<video class="vbx" src="img/v/doner-box.mp4" poster="img/v/doner-box.jpg" autoplay muted loop playsinline preload="auto" aria-label="Tavuk Döner Box hazırlanışı"></video>`;
+const BOXES=new Set();
+function startBoxes(){document.querySelectorAll('[data-dbx]').forEach(el=>{if(el._on)return;el._on=1;BOXES.add(boxAnim(el))})}
+function stopBoxes(){BOXES.forEach(b=>b.stop());BOXES.clear()}
+function boxAnim(el){
+ const cv=el.querySelector('canvas'),im=el.querySelector('img'),cx=cv.getContext('2d');
+ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let W=0,H=0,dpr=1,raf=0,last=0,spawn=0,parts=[],vis=true,dead=false;
+ const size=()=>{dpr=Math.min(2,devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0)};
+ const kinds=['fry','fry','fry','doner','doner','leaf','parsley','sauce'];
+ const rnd=(a,b)=>a+Math.random()*(b-a);
+ function add(){const k=kinds[Math.floor(Math.random()*kinds.length)];const s=W/320;
+  parts.push({k,x:W*rnd(.34,.66),y:-30*s,vy:rnd(40,90)*s,vx:rnd(-18,18)*s,r:rnd(0,6.28),vr:rnd(-4,4),s:s*rnd(.85,1.15),land:H*rnd(.30,.40),c:rnd(0,1)})}
+ function draw(p){cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.scale(p.s,p.s);
+  if(p.k==='fry'){cx.fillStyle=p.c>.5?'#F6C445':'#F2B632';cx.strokeStyle='#D9962A';cx.lineWidth=1.4;rr(-5,-24,10,48,3);cx.fill();cx.stroke();cx.fillStyle='rgba(255,255,255,.35)';rr(-3,-21,2.5,40,1.2);cx.fill()}
+  else if(p.k==='doner'){cx.fillStyle='#C9783A';cx.beginPath();cx.moveTo(-20,-6);cx.quadraticCurveTo(-6,-16,18,-9);cx.quadraticCurveTo(24,0,16,9);cx.quadraticCurveTo(-4,15,-19,7);cx.quadraticCurveTo(-25,0,-20,-6);cx.fill();cx.strokeStyle='#7A3E17';cx.lineWidth=2.2;cx.lineCap='round';cx.beginPath();cx.moveTo(-12,-4);cx.lineTo(-4,4);cx.moveTo(0,-7);cx.lineTo(8,3);cx.moveTo(10,-5);cx.lineTo(15,2);cx.stroke();cx.fillStyle='rgba(255,220,170,.35)';cx.beginPath();cx.ellipse(-2,-6,10,2.5,0,0,6.28);cx.fill()}
+  else if(p.k==='leaf'){cx.fillStyle='#8CC63F';cx.beginPath();for(let i=0;i<=12;i++){const a=i/12*6.283,r=15+3*Math.sin(i*2.2);cx.lineTo(Math.cos(a)*r*1.2,Math.sin(a)*r*.75)}cx.closePath();cx.fill();cx.strokeStyle='#6AA22B';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(-14,0);cx.lineTo(14,0);cx.stroke()}
+  else if(p.k==='parsley'){cx.fillStyle='#2E8B2E';[[0,-7],[-7,2],[7,2],[0,7]].forEach(([x,y])=>{cx.beginPath();cx.arc(x,y,5.5,0,6.28);cx.fill()});cx.strokeStyle='#2E7A2E';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(0,8);cx.lineTo(0,20);cx.stroke()}
+  else{cx.fillStyle='#FFFDF6';cx.strokeStyle='rgba(0,0,0,.06)';cx.beginPath();cx.moveTo(0,-11);cx.bezierCurveTo(7,-2,8,4,0,8);cx.bezierCurveTo(-8,4,-7,-2,0,-11);cx.fill();cx.stroke()}
+  cx.restore()}
+ function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+ function frame(t){if(dead)return;raf=requestAnimationFrame(frame);if(!vis)return;const dt=Math.min(.05,(t-(last||t))/1000);last=t;
+  if(!W||cv.clientWidth!==W)size();
+  spawn-=dt;if(spawn<=0){add();spawn=rnd(.18,.42)}
+  cx.clearRect(0,0,W,H);
+  parts=parts.filter(p=>{p.vy+=420*(W/320)*dt;p.y+=p.vy*dt;p.x+=p.vx*dt;p.r+=p.vr*dt;
+   if(p.y>p.land){im.classList.remove('bump');void im.offsetWidth;if(Math.random()<.35)im.classList.add('bump');return false}draw(p);return true})}
+ const io=new IntersectionObserver(es=>{vis=es[0].isIntersecting;last=0},{threshold:.05});io.observe(el);
+ size();if(reduce){for(let i=0;i<6;i++){add();parts[i].y=parts[i].land*rnd(.2,.8)}parts.forEach(draw)}else raf=requestAnimationFrame(frame);
+ return {stop(){dead=true;cancelAnimationFrame(raf);io.disconnect()}}}
+
+// ---------- Yönlendirme ----------
+const TABS=['home','search','cart','camps','account'];
+function go(r,params,opts){opts=opts||{};if(!opts.replace&&!TABS.includes(r)){T.stack.push({route:T.route,params:T.params,scroll:$('#view').scrollTop});try{history.pushState({mx:1},'')}catch(e){}}if(TABS.includes(r))T.stack=[];T.route=r;T.params=params||{};T.sheet=null;render();$('#view').scrollTop=opts.scroll||0}
+function uiBack(){if(T.stack.length&&history.state&&history.state.mx){history.back()}else back()}
+window.addEventListener('popstate',()=>{if(T.sheet&&!T.stack.length){T.sheet=null;rerender();return}if(T.stack.length)back();else if(T.route!=='home')go('home')});
+function back(){const p=T.stack.pop();if(!p){go('home');return}T.route=p.route;T.params=p.params;T.sheet=null;render();$('#view').scrollTop=p.scroll||0}
+function rerender(){const y=$('#view').scrollTop;render();$('#view').scrollTop=y}
+function needLogin(next){if(S.user)return false;T.afterLogin=next;go('login');return true}
+
+// ---------- Parçalar ----------
+const hdr=(title,{back:bk=true,right=''}={})=>`<header class="hdr"><div class="side">${bk?`<button data-a="back" aria-label="Geri">${I.back(24)}</button>`:''}</div><h2>${esc(title)}</h2><div class="side r">${right}</div></header>`;
+function trust(){return `<div class="trust"><img src="img/pay/logo_band_colored.svg" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy"><span class="ssl">${I.lock(14)} 256-bit SSL sertifikası ile korunan güvenli bağlantı</span></div>
+ <div class="legal-links">${Object.entries(DOCNAMES).map(([k,n])=>`<button data-a="doc" data-v="${k}">${n}</button>`).join('')}</div><div class="powered">Powered by <b>Lokus Studio</b></div>`}
+function card(p){const q=qtyOf(p.id);const fav=S.favs.includes(p.id);
+ return `<div class="pc"><button class="heart" data-a="fav" data-v="${p.id}" aria-label="Favori">${fav?I.heartF(22):I.heart(22)}</button>${p.isNew?'<span class="badge-new">YENİ</span>':''}
+ <div class="im"><button class="imb" data-a="openp" data-v="${p.id}" aria-label="${esc(p.name)}">${p.id==='doner-box'?boxHTML():img(p)}</button>
+ <div class="add">${q?`<span class="mini"><button data-a="dec" data-v="${p.id}" aria-label="Azalt">${q>1?I.minus(16):I.trash(16)}</button><span class="num">${q}</span><button class="plus" data-a="quick" data-v="${p.id}" aria-label="Ekle">${I.plus(16)}</button></span>`:`<button class="plus" data-a="quick" data-v="${p.id}" aria-label="Sepete ekle">${I.plus(16)}</button>`}</div></div>
+ <button class="tx" data-a="openp" data-v="${p.id}"><span class="nm">${esc(p.name)}</span><span class="pr num">${tl(p.price)}</span></button></div>`}
+function bottomNav(){const n=totals().count;const t=[['home','Anasayfa','home'],['search','Arama','search'],['cart','Sepetim','cart'],['camps','Kampanyalar','gift'],['account','Hesabım','user']];
+ const act=TABS.includes(T.route)?T.route:'';
+ return t.map(([k,l,ic])=>`<button class="${act===k?'on':''}" data-tab="${k}">${I[ic](23)}${k==='cart'&&n?`<span class="nb num">${n}</span>`:''}<span>${l}</span></button>`).join('')}
+function loyalty(){const s=S.stamps%10,free=Math.floor(S.stamps/10);
+ return `<div class="loyal"><button class="t" data-a="opencamp" data-v="damga"><span>10 Döner’e 1 Döner Hediye!</span><b>Detaylar ${I.back(16).replace('M20 12H4M10 6l-6 6 6 6','M4 12h16M14 6l6 6-6 6')}</b></button>
+ <div class="b"><span class="cnt num">${s}<small>/10</small></span><div class="bar"><i style="width:${s*10}%"></i></div><span class="free"><span class="c num">${free}</span>Bedava<br>Döner</span></div></div>`}
+
+// ---------- Ekranlar ----------
+const V={};
+V.home=()=>{const b=branch();
+ const fav=S.favs.filter(id=>id!=='doner-box').map(prod).filter(Boolean);const ozel=[prod('doner-box')].concat(fav.length?fav:PICKS.slice(1).map(prod)).slice(0,6);
+ const secs=CATS.map(([id,name])=>{const items=id==='ozel'?ozel:id==='one'?FEATURED.map(prod):P.filter(p=>p.cat===id);
+   return `<section class="sec" id="sec-${id}"><h3>${name}</h3><div class="grid">${items.map(card).join('')}</div></section>`}).join('');
+ return `<header class="hdr home"><div class="side"><button data-a="notif" aria-label="Bildirimler">${I.bell(24)}</button></div><div class="logo"><img src="img/logo-white.png" alt="Mixsos"></div><button class="qrbtn" data-a="qr">${I.qr(26)}<span>QR<br>Oluştur</span></button></header>
+ <button class="branchbar" data-a="branches">${I.bag(20)}<span>${esc(S.mode==='adres'&&S.address?'Adrese Teslim · '+S.address.mah:b.name)}</span>${I.chev(20)}</button>
+ <div class="carousel"><div class="slides" id="slides">${SLIDES.map(s=>`<button class="slide" data-a="opencamp" data-v="${s.camp}"><img src="img/${s.img}" alt=""></button>`).join('')}</div><span class="counter num" id="cnt">1/${SLIDES.length}</span></div>
+ ${loyalty()}
+ <div class="chips" id="chips">${CATS.map(([id,n])=>`<button class="chip ${T.cat===id?'on':''}" data-a="cat" data-v="${id}">${I[CATIC[id]](16)}${n}</button>`).join('')}</div>
+ ${secs}${trust()}`};
+
+V.search=()=>{const q=T.q.trim().toLocaleLowerCase('tr');const res=q?P.filter(p=>(p.name+' '+p.desc).toLocaleLowerCase('tr').includes(q)):[];
+ return `${hdr('Arama',{back:false})}<div class="pad" style="padding-top:12px"><div class="promo" style="margin:0">${I.search(20)}<input id="q" placeholder="Ürün ara" value="${esc(T.q)}" autocomplete="off" style="border:0"></div></div>
+ ${q?(res.length?`<section class="sec"><h3>${res.length} sonuç</h3><div class="grid">${res.map(card).join('')}</div></section>`:`<div class="empty"><h3>Sonuç bulunamadı</h3><p>Farklı bir kelime dene.</p></div>`)
+ :`<section class="sec"><h3>Popüler aramalar</h3><div style="display:flex;flex-wrap:wrap;gap:8px">${['Kebabi','Hatay','Burrito','Box','Burger','Patates','Nugget','Ayran'].map(w=>`<button class="chip" data-a="qset" data-v="${w}">${w}</button>`).join('')}</div></section>
+   <section class="sec"><h3>Öne Çıkanlar</h3><div class="grid">${FEATURED.map(prod).map(card).join('')}</div></section>`}`};
+
+V.product=()=>{const p=prod(T.params.id);const fav=S.favs.includes(p.id);const u=unit(p,T.sel);
+ const grp=p.g.map(g=>{const s=T.sel[g.id]||[];const miss=T.tried&&g.req&&!s.length;
+  return `<div class="grp" id="g-${g.id}"><div class="gh"><b>${g.name}</b>${g.req?`<span class="pill req ${miss?'err':''}">${I.check(12)} Zorunlu</span>`:`<span class="pill soft">En fazla ${g.max}</span>`}</div>
+  ${g.opts.map((o,i)=>`<button class="opt ${s.includes(i)?'on':''}" data-a="pick" data-g="${g.id}" data-i="${i}"><span class="l">${esc(o[0])}${o[1]?`<small class="num">+${tl(o[1])}</small>`:''}</span><span class="radio ${g.max>1?'sq':''}"></span></button>`).join('')}</div>`}).join('');
+ return `<div class="pd-hero"><button class="fab l" data-a="back" aria-label="Geri">${I.back(22)}</button><button class="fab r" data-a="fav" data-v="${p.id}" aria-label="Favori">${fav?I.heartF(22):I.heart(22)}</button>${p.id==='doner-box'?boxHTML():img(p)}</div>
+ <div class="pd-info"><h1>${esc(p.name)}</h1><p>${esc(p.desc)}</p>${p.doner?`<div class="stamp">${I.gift(18)} Bu ürün ile 1 damga kazanırsın.</div>`:''}
+ <div class="stepper"><button class="s l" data-a="pq" data-v="-1" aria-label="Azalt">${I.minus(18)}</button><span class="num" style="font-size:18px">${T.qty}</span><button class="s b" data-a="pq" data-v="1" aria-label="Artır">${I.plus(16)}</button></div></div>
+ ${grp}<div style="height:16px"></div>
+ <div class="bottom"><div class="paybar"><span class="t num">${tl(u*T.qty)}</span><button class="btn btn-red" data-a="addcart">Sepete Ekle</button></div></div>`};
+
+V.cart=()=>{const t=totals();const b=branch();
+ if(!S.cart.length)return `${hdr('Sepetim',{back:false})}<div class="empty">${I.cart(56)}<h3>Sepetin boş</h3><p>Lezzetli bir şeyler ekleyerek başla.</p><button class="btn btn-red" style="max-width:240px" data-tab="home">Menüye Git</button></div>`;
+ return `${hdr('Sepetim',{back:false,right:`<button data-a="clear" aria-label="Sepeti boşalt">${I.trash(22)}</button>`})}
+ <button class="row" style="margin-top:0;border-radius:0;width:100%;margin-left:0;margin-right:0" data-a="branches">${I.bag(20)}<span class="l" style="font-weight:600">${esc(S.mode==='adres'&&S.address?'Adrese Teslim':b.name)}</span>${I.right(18)}</button>
+ ${S.cart.map((l,i)=>{const p=prod(l.pid);return `<div class="ci"><h4>${esc(p.name)}</h4>${l.opts.length?`<div class="o">${l.opts.map(o=>`<div><b>${esc(o[0])} :</b> ${esc(o[1])}</div>`).join('')}</div>`:''}
+  <div class="r"><span class="p num">${tl(l.unit*l.qty)}</span><span class="stepper"><button class="s l" data-a="cq" data-i="${i}" data-v="-1" aria-label="Azalt">${l.qty>1?I.minus(18):I.trash(18)}</button><span class="num">${l.qty}</span><button class="s b" data-a="cq" data-i="${i}" data-v="1" aria-label="Artır">${I.plus(16)}</button></span></div></div>`}).join('')}
+ <div class="ci"><h4>Poşet</h4><div class="r"><span class="p num">${tl(S.poset*POSET_PRICE)}</span><span class="stepper">${S.poset?`<button class="s l" data-a="poset" data-v="-1" aria-label="Azalt">${I.minus(18)}</button><span class="num">${S.poset}</span>`:''}<button class="s ${S.poset?'b':'l'}" data-a="poset" data-v="1" aria-label="Poşet ekle">${I.plus(16)}</button></span></div><div class="o" style="margin-top:6px">Çevre mevzuatı gereği poşet ücretlidir.</div></div>
+ <section class="sec"><h3>Sana Eşlik Etsin</h3></section><div class="hscroll">${UPSELL.map(prod).map(p=>`<div class="up"><img src="img/p/${p.img}.jpg" alt="${esc(p.name)}" loading="lazy"><span class="n">${esc(p.name)}</span><span class="bt"><span class="num">${tl(p.price)}</span><button class="sqplus" data-a="upadd" data-v="${p.id}" aria-label="Ekle">${I.plus(16)}</button></span></div>`).join('')}</div>
+ <div style="height:10px"></div><div class="bottom"><div class="paybar"><span class="t num">${tl(t.total)}</span><button class="btn btn-red" data-a="tocheckout">Devam Et</button></div></div>`};
+
+V.checkout=()=>{const t=totals();const b=branch();const card=LIVE_PAY?null:S.cards[0];const free=Math.floor(S.stamps/10)>0;
+ const camps=[['elit',COUPONS.elit.title]];if(free)camps.unshift(['free','Hediye Döner (damga kartından)']);
+ const pm=T.payWith==='wallet'?`<div class="row" style="margin:10px 0 0;width:100%;border:1.5px solid var(--line)">${I.wallet(22)}<span class="l">Mixsos Cüzdan<br><small class="muted num">Bakiye: ${tl(S.wallet.bal+S.wallet.bonus)}</small></span></div>`
+  :card&&T.payWith==='saved'?`<div class="row" style="margin:10px 0 0;width:100%;border:1.5px solid var(--line)">${I.card(22)}<span class="l">${esc(card.name)}<br><small class="muted num">${esc(card.mask)}</small></span></div><p class="label" style="margin-top:6px">Ödeme seçilen karttan tahsil edilecektir.</p>`
+  :`<p class="label" style="margin-top:8px">${LIVE_PAY?'Ödeme Yap’a bastığında iyzico’nun güvenli ödeme sayfası açılır; kart bilgilerin Mixsos’a iletilmez.':'Ödeme Yap’a bastığında kart bilgilerini gireceksin.'}</p>${LIVE_PAY&&PAY_MODE!=='live'?`<div class="note" style="margin-top:10px"><b>Test ortamı (iyzico sandbox).</b> Gerçek para çekilmez. Test kartı: <span class="num">5528 7900 0000 0008</span> · SKT <span class="num">12/30</span> · CVC <span class="num">123</span> · 3D şifresi <span class="num">283126</span></div>`:''}`;
+ return `${hdr('Ödeme')}
+ <div class="row" style="margin:0;border-radius:0;width:100%">${I.bag(20)}<span class="l" style="font-weight:600">${esc(S.mode==='adres'&&S.address?'Adrese Teslim · '+S.address.mah:b.name)}</span></div>
+ ${S.mode==='gelal'?`<div class="card" style="display:flex;align-items:center;gap:12px"><div style="flex:1"><b style="font-weight:600;font-size:15px">Servis</b><p class="label" style="margin-top:2px">Siparişimi şubede yemek istiyorum.</p></div><button class="toggle ${T.dineIn?'on':''}" data-a="dine" aria-label="Şubede ye"></button></div>`:''}
+ <div class="card"><div style="display:flex;align-items:center"><b style="flex:1;font-weight:600;font-size:15px">Not Ekle</b><button class="sqplus" data-a="note" aria-label="Not ekle">${T.noteOpen?I.minus(18):I.plus(18)}</button></div>${T.noteOpen?`<textarea class="input" id="note" style="margin-top:10px" maxlength="200" placeholder="Örn. Soğansız olsun">${esc(T.note)}</textarea>`:''}</div>
+ <div class="card"><div style="display:flex;align-items:center"><b style="flex:1;font-weight:600;font-size:15px">Ödeme Yöntemi</b><button class="btn btn-out sm" data-a="paysheet">Değiştir</button></div>
+  <p style="margin-top:12px;font-weight:500">${T.payWith==='wallet'?'Mixsos Cüzdan ile Ödeme':'Kredi Kartı ile Online Ödeme'}</p>${pm}</div>
+ <div class="card" style="padding-bottom:4px"><div style="display:flex;align-items:center;margin-bottom:10px"><b style="flex:1;font-weight:600;font-size:15px;display:flex;gap:8px;align-items:center">${I.gift(20)} Kampanyalar</b><button data-tab="camps" style="font-weight:600;text-decoration:underline;display:flex;align-items:center">Tümü ${I.right(16)}</button></div></div>
+ <div class="hscroll" style="margin-top:-14px">${camps.map(([id,tt])=>`<div class="camp ${T.coupon===id?'on':''}"><span class="t">${esc(tt)}</span><button class="btn btn-out sm" data-a="coupon" data-v="${id}">${T.coupon===id?'Kaldır':'Uygula'}</button></div>`).join('')}</div>
+ <div class="card num"><b style="font-weight:600;font-size:15px;display:block;margin-bottom:4px">Ödeme Bilgisi</b><div class="kv"><span>Sipariş Tutarı</span><span>${tl(t.sub)}</span></div>${t.disc?`<div class="kv" style="color:var(--ok)"><span>İndirim</span><span>−${tl(t.disc)}</span></div>`:''}<div class="kv"><span>Damga Kazanımı</span><span>${t.stamps} Adet</span></div><div class="kv tot"><span>Toplam</span><span>${tl(t.total)}</span></div></div>
+ <div class="card"><button class="consent ${T.consent?'on':''}" data-a="consent"><span class="radio sq"></span><span><u data-a="doc" data-v="onbilgi">Ön Bilgilendirme Formu</u>’nu ve <u data-a="doc" data-v="mesafeli">Mesafeli Satış Sözleşmesi</u>’ni okudum, onaylıyorum.</span></button>
+ <p class="label" style="margin-top:10px;line-height:1.5">Siparişler gıda niteliğinde olduğundan cayma hakkı kapsamı dışındadır. Ayrıntılar: <u data-a="doc" data-v="teslimat" style="color:var(--red)">Teslimat ve İade Şartları</u></p></div>
+ <div class="trust" style="padding-top:4px"><img src="img/pay/logo_band_colored.svg" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy"><span class="ssl">${I.lock(14)} 256-bit SSL ile güvenli ödeme</span></div>
+ <div style="height:6px"></div><div class="bottom"><div class="paybar"><span class="t num">${tl(t.total)}</span><button class="btn btn-red" data-a="pay" ${T.consent?'':'aria-disabled="true" style="opacity:.5"'}>Ödeme Yap</button></div></div>`};
+
+V.cardform=()=>{const c=T.card;const amount=T.pay.amount;
+ return `${hdr('Kart Bilgileri')}<form class="card" id="cardForm" style="display:flex;flex-direction:column;gap:12px">
+ <div class="note"><b>Test modu.</b> Gerçek kart bilgisi girme, ödeme alınmaz. Canlıda bu adımda iyzico’nun güvenli ödeme formu açılır; kart bilgisi uygulamaya ya da sunucumuza uğramaz.</div>
+ <button type="button" class="btn btn-out" style="height:42px" data-a="testcard">Test kartını doldur</button>
+ <label class="f">Kart üzerindeki isim<input class="input" id="cname" value="${esc(c.name)}" autocomplete="off"></label>
+ <label class="f">Kart numarası<input class="input num" id="cno" inputmode="numeric" maxlength="19" value="${esc(c.no.replace(/(.{4})/g,'$1 ').trim())}" autocomplete="off"></label>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Son kullanma<input class="input num" id="cexp" placeholder="AA/YY" maxlength="5" value="${esc(c.exp)}" autocomplete="off"></label><label class="f">CVC<input class="input num" id="ccvc" inputmode="numeric" maxlength="4" value="${esc(c.cvc)}" autocomplete="off"></label></div>
+ <button type="button" class="opt ${c.save?'on':''}" data-a="savecard" style="padding:4px 0"><span class="radio sq"></span><span class="l">Kartımı sonraki siparişler için kaydet</span></button>
+ <div class="iyz"><img src="img/pay/iyzico_ile_ode_colored_horizontal.svg" alt="iyzico ile Öde"></div>
+ <p class="label" style="display:flex;gap:6px;align-items:center;justify-content:center">${I.lock(14)} 256-bit SSL ve 3D Secure ile korunur</p>
+ <div class="paybar" style="box-shadow:none;background:var(--bg)"><span class="t num">${tl(amount)}</span><button class="btn btn-red" type="submit">Öde</button></div></form>
+ <div class="trust"><img src="img/pay/logo_band_colored.svg" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy"></div>`};
+
+V.threeds=()=>`${hdr('3D Secure')}<form class="card" id="tdsForm" style="display:flex;flex-direction:column;gap:14px"><h3 style="font-size:18px;font-weight:600">Bankanın doğrulama adımı</h3><p class="label">Canlıda bu sayfayı kartı veren banka gösterir.</p><div class="note">Demo SMS kodu: <b>283126</b></div><input class="input num" id="tds" inputmode="numeric" maxlength="6" placeholder="••••••" style="text-align:center;letter-spacing:10px;font-size:22px" autocomplete="one-time-code"><button class="btn btn-red" type="submit">Onayla</button></form>`;
+
+V.track=()=>{const o=S.orders.find(x=>x.no===T.params.no)||S.orders[0];const steps=[['Sipariş Alındı','Şubeye iletildi'],['Hazırlanıyor','Siparişin hazırlanıyor'],[o.mode==='adres'?'Yola Çıktı':'Teslim Alınmaya Hazır',o.mode==='adres'?'Kuryemiz yolda':o.dine?'Masana getiriliyor':'Kasadan teslim alabilirsin']];
+ return `${hdr('Sipariş Takibi',{back:false,right:`<button data-tab="home" aria-label="Kapat">${I.close(22)}</button>`})}
+ <div class="card" style="text-align:center;padding:22px"><div style="width:60px;height:60px;border-radius:50%;background:var(--ok-t);color:var(--ok);display:inline-flex;align-items:center;justify-content:center">${I.check(30)}</div><h2 style="font-size:19px;font-weight:600;margin-top:8px">Siparişin alındı</h2><p class="label num" style="margin-top:4px">Sipariş no #${o.no} · ${esc(o.branch)}</p>${o.stamps?`<div class="stamp" style="margin-top:12px;justify-content:center">${I.gift(18)} ${o.stamps} damga kazandın</div>`:''}</div>
+ <div class="card track">${steps.map((s,i)=>`<div class="st ${i<o.status||o.status===2?'done':i===o.status?'cur':''}"><span class="d">${i<o.status||o.status===2?I.check(14):''}</span><div><b>${s[0]}</b><small>${s[1]}</small></div></div>`).join('')}</div>
+ <div class="card num">${o.lines.map(l=>`<div class="kv"><span>${l.qty}× ${esc(prod(l.pid).name)}</span><span>${tl(l.unit*l.qty)}</span></div>`).join('')}${o.disc?`<div class="kv" style="color:var(--ok)"><span>İndirim</span><span>−${tl(o.disc)}</span></div>`:''}<div class="kv tot"><span>Toplam</span><span>${tl(o.total)}</span></div></div>
+ <div class="pad" style="padding-bottom:20px"><button class="btn btn-ink" data-tab="home">Anasayfaya Dön</button></div>`};
+
+V.camps=()=>`${hdr('Kampanyalar',{back:false})}
+ <form class="promo" id="promoForm"><span style="color:var(--red)">${I.gift(20)}</span><input id="promo" placeholder="Promosyon Kodu Girin" autocapitalize="characters" autocomplete="off"><button class="btn btn-red sm" type="submit">Kaydet</button></form>
+ <section class="sec"><h3>Devam Eden Kampanyalar (${CAMPS.length})</h3></section>
+ ${CAMPS.map(c=>`<button class="ccard" data-a="opencamp" data-v="${c.id}"><div class="im">${c.img?`<img src="img/${c.img}" alt="" loading="lazy">`:`<div class="cssban" style="background:linear-gradient(120deg,#8E0B17,#C8102E 60%,#E3232F)"><span>${c.css[0]}</span><b>${c.css[1]}</b><span>${c.css[2]}</span></div>`}</div><div class="tt"><span>${esc(c.title)}</span>${I.right(18)}</div></button>`).join('')}
+ ${trust()}`;
+
+V.camp=()=>{const c=CAMPS.find(x=>x.id===T.params.id);const p=c.pid&&prod(c.pid);
+ return `${hdr('Kampanya')}<div style="background:#fff">${c.poster?`<img src="img/${c.poster}.jpg" alt="${esc(c.title)}" style="width:100%">`:`<div class="cssban" style="background:linear-gradient(120deg,#8E0B17,#C8102E 60%,#E3232F);aspect-ratio:16/9;max-width:100%"><span>${c.css[0]}</span><b>${c.css[1]}</b><span>${c.css[2]}</span></div>`}</div>
+ <div class="card"><h3 style="font-size:17px;font-weight:600">${esc(c.title)}</h3>
+ ${c.id==='damga'?`<p class="label" style="margin-top:8px;line-height:1.6">Her tavuk döner ürününde 1 damga kazanırsın. 10 damgada bir tavuk döner bizden. Hediye dönerini ödeme ekranındaki Kampanyalar bölümünden kullanabilirsin.</p><div style="margin-top:12px">${loyalty().replace('class="loyal"','class="loyal" style="margin:0"')}</div>`
+ :c.id==='elit'?`<p class="label" style="margin-top:8px;line-height:1.6">Ödeme ekranındaki Kampanyalar bölümünden “Uygula” diyerek kullanabilirsin.</p>`
+ :`<p class="label" style="margin-top:8px;line-height:1.6">Kampanya koşulları ve geçerlilik tarihleri şubeye göre değişebilir.</p>`}</div>
+ ${p?`<div class="bottom"><button class="btn btn-red" data-a="openp" data-v="${p.id}">Ürüne Git</button></div>`:''}`};
+
+V.account=()=>{if(!S.user)return `${hdr('Hesabım',{back:false,right:`<button data-a="notif" aria-label="Bildirimler">${I.bell(22)}</button>`})}<div class="empty">${I.user(56)}<h3>Hesabına giriş yap</h3><p>Damga kartın, cüzdanın ve geçmiş siparişlerin için giriş yap.</p><button class="btn btn-red" style="max-width:260px" data-a="login">Giriş Yap ya da Kayıt Ol</button></div>${menuRows(false)}`;
+ return `${hdr('Hesabım',{back:false,right:`<button data-a="notif" aria-label="Bildirimler">${I.bell(22)}</button>`})}
+ <div class="info"><div class="l"><small>Kişisel Bilgiler</small><b>${esc(S.user.name)}</b></div><button class="edit" data-a="editname" aria-label="Düzenle">${I.edit(16)}</button></div>
+ <div class="info"><div class="l"><small>Telefon Numarası</small><b class="num">${esc(S.user.phone)}</b></div><button class="edit" data-a="login" aria-label="Değiştir">${I.edit(16)}</button></div>
+ <button class="hero-r" data-a="opencamp" data-v="damga"><span class="ic">${I.gift(24)}</span><span style="flex:1"><b>Damga Kartım · ${S.stamps%10}/10</b><small>10 döner siparişinde 1 tavuk döner bizden!</small></span>${I.right(18)}</button>
+ ${menuRows(true)}`};
+function menuRows(auth){const r=[['share','Arkadaşına Öner','invite',1],['wallet','Mixsos Cüzdan','qr',1],['heart','Favorilerim','favs',1],['bag','Önceki Siparişlerim','orders',1],['card','Kayıtlı Kartlarım','cards',1],['bell','İletişim Tercihleri','prefs',1],['help','Yardım Merkezi','help',0],['store','Şubeler','branches',0]];
+ return r.filter(x=>auth||!x[3]).map(([ic,l,a])=>`<button class="row" data-a="${a}">${I[ic](20)}<span class="l">${l}</span>${I.right(18)}</button>`).join('')
+ +`<section class="sec"><h3>Kurumsal</h3></section>`+Object.entries(DOCNAMES).map(([k,n])=>`<button class="row" data-a="doc" data-v="${k}">${I[k==='about'?'store':'note'](20)}<span class="l">${n}</span>${I.right(18)}</button>`).join('')
+ +(auth?`<button class="row" data-a="logout">${I.logout(20)}<span class="l">Çıkış Yap</span>${I.right(18)}</button>`:'')+`<div class="ver"><span>Uygulama Versiyonu</span><span>1.0.0</span></div>${trust()}`}
+
+V.login=()=>`${hdr('Giriş Yap')}<form class="card" id="loginForm" style="display:flex;flex-direction:column;gap:14px;margin-top:16px">
+ ${!T.otp?`<h3 style="font-size:19px;font-weight:600">Telefon numaranla devam et</h3><p class="label" style="line-height:1.5">Hesabın yoksa otomatik oluşturulur. Numarana tek kullanımlık doğrulama kodu göndereceğiz.</p>
+ <label class="f">Cep telefonu<div style="display:flex;gap:8px"><span class="input" style="width:72px;display:flex;align-items:center;justify-content:center;font-weight:600">+90</span><input class="input num" id="phone" inputmode="numeric" maxlength="13" placeholder="5xx xxx xx xx" value="${esc(T.phone)}" autocomplete="tel-national"></div></label>
+ <button class="btn btn-red" type="submit">Kod Gönder</button>`
+ :`<h3 style="font-size:19px;font-weight:600">Doğrulama kodu</h3><p class="label">+90 ${esc(T.phone)} numarasına gönderilen 6 haneli kodu gir.</p><div class="note">Demo: SMS gönderilmez, kod <b>123456</b>. Canlıda Firebase ile gerçek SMS gider.</div>
+ <input class="input num" id="otp" inputmode="numeric" maxlength="6" placeholder="••••••" style="text-align:center;letter-spacing:10px;font-size:22px" autocomplete="one-time-code">
+ <label class="f">Adın Soyadın<input class="input" id="uname" maxlength="40" placeholder="Örn. Yunus Ayçiçek" value="${esc(S.user?S.user.name:'')}"></label>
+ <button class="btn btn-red" type="submit">Doğrula ve Devam Et</button><button type="button" class="btn" style="height:36px" data-a="chphone">Numarayı değiştir</button>`}
+ </form>`;
+
+V.qr=()=>{const left=T.qrLeft;if(!T.qr)T.qr=String(100000+Math.floor(Math.random()*900000));
+ return `${hdr('QR Oluştur')}<div style="display:flex;flex-direction:column;min-height:calc(100% - 56px - var(--top))"><div class="qrwrap">
+ ${S.user?`<p>Kasada QR oluştur, sana özel fırsatlardan yararlan.</p><canvas id="qrc" width="29" height="29" aria-label="Ödeme QR kodu"></canvas><span class="qcode num">${T.qr}</span>
+ <div class="dots" id="dots">${Array.from({length:20},(_,i)=>`<i class="${i<Math.ceil(left/3)?'':'off'}"></i>`).join('')}<span class="num" id="qleft" style="margin-left:6px;color:var(--red);font-weight:600;font-size:13px">${left}</span></div>
+ <button class="btn btn-out sm" data-a="newqr">${I.qr(18)} Yeni QR Üret</button>`:`<p>QR ile ödeme ve damga kazanmak için giriş yap.</p><button class="btn btn-red" style="max-width:260px" data-a="login">Giriş Yap</button>`}</div>
+ <div class="wal"><div class="r"><div><span class="label">Cüzdan Bakiyesi</span><br><b class="num">${tl(S.wallet.bal+S.wallet.bonus)}</b></div><div><span class="free"><span class="c num">${Math.floor(S.stamps/10)}</span></span>Bedava<br>Döner</div></div>
+ <button class="btn btn-red" data-a="topup">${I.wallet(20)} Para Yükle</button></div></div>`};
+
+V.branches=()=>{const sel=T.tmpBranch||S.branch;const list=BR.filter(b=>b.il===T.il);
+ const top=`<header class="hdr" style="flex-wrap:wrap;padding-bottom:0"><div class="side"><button data-a="back" aria-label="Geri">${I.back(24)}</button></div><h2>Şube Seç</h2><div class="side"></div><div style="flex-basis:100%;height:12px"></div></header>
+ <div style="background:var(--head);padding-bottom:14px"><div class="seg" style="margin-bottom:0"><button class="${S.mode!=='adres'?'on':''}" data-a="mode" data-v="gelal">${I.bag(18)} Şubeden Al</button><button class="${S.mode==='adres'?'on':''}" data-a="mode" data-v="adres">${I.bike(18)} Adrese Teslim</button></div></div>`;
+ if(S.mode==='adres'){const a=S.address||{};return top+`<form class="card" id="addrForm" style="display:flex;flex-direction:column;gap:12px"><b style="font-weight:600;font-size:15px">Teslimat adresi</b>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">İl<select class="input" id="ail">${[...new Set(BR.map(b=>b.il))].map(i=>`<option ${a.il===i?'selected':''}>${i}</option>`).join('')}</select></label><label class="f">İlçe<input class="input" id="ailce" value="${esc(a.ilce||'')}" required></label></div>
+  <label class="f">Mahalle<input class="input" id="amah" value="${esc(a.mah||'')}" required></label><label class="f">Sokak / Cadde, No, Daire<input class="input" id="asok" value="${esc(a.sok||'')}" required></label><label class="f">Adres tarifi<textarea class="input" id="atar">${esc(a.tar||'')}</textarea></label>
+  <div class="note">Adrese teslim, kurye altyapısı bağlandığında açılacak. Şimdilik adres kaydedilir; sipariş en yakın şubeye iletilir.</div><button class="btn btn-red" type="submit">Adresi Kaydet ve Devam Et</button></form>`}
+ if(T.brView==='map')return top+`<div class="map"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#E9EEE6"/><path d="M0 70 Q30 60 45 75 T100 68 V100 H0Z" fill="#BFD9EA"/><path d="M-5 30 L105 42 M20 -5 L35 105 M60 -5 L72 105 M-5 55 L105 25" stroke="#fff" stroke-width="2.4"/><path d="M-5 30 L105 42" stroke="#F4D27A" stroke-width="1.2"/>${BR.map(b=>`<g><circle cx="${b.x}" cy="${b.y}" r="${b.id===sel?5:4}" fill="${b.id===sel?'#C8102E':'#111'}"/><circle cx="${b.x}" cy="${b.y}" r="1.6" fill="#fff"/></g>`).join('')}<circle cx="50" cy="52" r="2" fill="#2F7BF6" stroke="#fff" stroke-width=".8"/></svg>
+  <div class="msearch">${I.search(18)} Mahalle, Sokak, Cadde Ara</div><span class="mpill">Bu Bölgede Ara</span></div>
+  <div style="background:#fff;border-radius:18px 18px 0 0;margin-top:-16px;position:relative;padding-top:10px"><div style="width:44px;height:4px;border-radius:2px;background:#333;margin:0 auto"></div>${BR.filter(b=>b.id===sel).map(brCard).join('')}<p class="label pad">Demo harita. Gerçek harita Google Maps bağlanınca gelecek.</p></div>
+  <div class="bottom" style="display:flex;flex-direction:column;gap:10px"><button class="btn btn-out" data-a="brview" data-v="list">${I.list(18)} Listeden Seç</button><button class="btn btn-red" data-a="brok">Seçili Şube ile Devam Et</button></div>`;
+ return top+`<div class="selects"><select id="il" aria-label="İl">${[...new Set(BR.map(b=>b.il))].map(i=>`<option ${T.il===i?'selected':''}>${i}</option>`).join('')}</select><select aria-label="İlçe" disabled><option>${list[0]?list[0].ilce:'—'}</option></select></div>
+  <div style="background:#fff;padding:2px 0 10px">${list.map(brCard).join('')||'<p class="empty">Bu ilde şube yok.</p>'}</div>
+  <div class="bottom" style="display:flex;flex-direction:column;gap:10px"><button class="btn btn-out" data-a="brview" data-v="map">${I.pin(18)} Haritadan Seç</button><button class="btn btn-red" data-a="brok">Seçili Şube ile Devam Et</button></div>`};
+function brCard(b){const sel=(T.tmpBranch||S.branch)===b.id;const o=isOpen(b);
+ return `<button class="bc ${sel?'on':''}" data-a="brpick" data-v="${b.id}"><span class="h"><span class="mi">${I.store(13)}</span><span class="nm">${esc(b.name)}</span><span class="${sel?'on':''}" style="flex:none"><span class="radio"></span></span></span><p>${esc(b.addr)}</p><span class="hrs"><span>Çalışma Saatleri: <span class="num">${b.hours}</span></span><span class="${o?'openp':'closedp'}">${o?'Açık':'Kapalı'}</span></span></button>`}
+
+V.favs=()=>{const f=S.favs.map(prod).filter(Boolean);return `${hdr('Favorilerim')}${f.length?`<section class="sec" style="padding-top:12px"><div class="grid">${f.map(card).join('')}</div></section>`:`<div class="empty">${I.heart(52)}<h3>Henüz favorin yok</h3><p>Ürünlerdeki kalbe dokunarak ekleyebilirsin.</p></div>`}`};
+V.orders=()=>`${hdr('Önceki Siparişlerim')}${S.orders.length?S.orders.map(prevCard).join('').replace(/class="prev"/g,'class="prev" style="width:auto;max-width:none;margin:10px 16px"'):`<div class="empty">${I.bag(52)}<h3>Henüz siparişin yok</h3></div>`}`;
+function prevCard(o){return `<div class="prev"><div class="d num">Sipariş Tarihi : ${esc(o.date)}</div><div class="i">${o.lines.map(l=>esc(prod(l.pid).name)).join(', ')}</div><div style="display:flex;gap:8px;align-items:center"><span class="num" style="font-weight:600;flex:1">${tl(o.total)}</span><button class="btn btn-red sm" data-a="reorder" data-v="${o.no}">${I.refresh(16)} Tekrarla</button></div><button class="label" data-a="track" data-v="${o.no}" style="text-align:left;text-decoration:underline">Sipariş detayı</button></div>`}
+V.cards=()=>`${hdr('Kayıtlı Kartlarım')}${S.cards.length?S.cards.map((c,i)=>`<div class="row">${I.card(22)}<span class="l">${esc(c.name)}<br><small class="muted num">${esc(c.mask)}</small></span><button data-a="rmcard" data-v="${i}" aria-label="Kartı sil" style="color:var(--red)">${I.trash(20)}</button></div>`).join(''):`<div class="empty">${I.card(52)}<h3>Kayıtlı kartın yok</h3><p>Ödeme sırasında “Kartımı kaydet” seçeneğiyle ekleyebilirsin.</p></div>`}`;
+V.prefs=()=>`${hdr('İletişim Tercihleri')}${[['push','Anlık bildirim'],['sms','SMS'],['mail','E-posta']].map(([k,l])=>`<div class="row"><span class="l">${l}</span><button class="toggle ${S.prefs[k]?'on':''}" data-a="pref" data-v="${k}" aria-label="${l}"></button></div>`).join('')}<p class="label pad" style="line-height:1.5">Kampanya ve fırsat bildirimleri için kullanılır. Sipariş durum bildirimleri her zaman gönderilir.</p>`;
+V.help=()=>{const b=branch();return `${hdr('Yardım Merkezi')}${[['Siparişimi nasıl iptal ederim?','Hazırlanmaya başlamamış siparişler için şubeyi arayabilirsin.'],['Damgalar ne zaman yüklenir?','Ödeme tamamlandığında tavuk döner ürünlerinin her biri için 1 damga hesabına eklenir.'],['Cüzdana yüklediğim para iade edilir mi?','Cüzdan bakiyesi tüm şubelerde siparişlerde kullanılabilir. İade talepleri için şubeyle iletişime geç.']].map(([q,a])=>`<details class="card"><summary style="font-weight:500;cursor:pointer">${q}</summary><p class="label" style="margin-top:8px;line-height:1.6">${a}</p></details>`).join('')}
+ <div class="card"><b style="font-weight:600">${esc(b.name)}</b>${b.tel?`<p class="num" style="margin-top:6px;user-select:all">${esc(b.tel)}</p><button class="btn btn-out sm" style="margin-top:10px" data-a="copy" data-v="${esc(b.tel)}">${I.copy(16)} Numarayı Kopyala</button>`:'<p class="label" style="margin-top:6px">Telefon bilgisi eklenecek.</p>'}</div>`};
+
+V.doc=()=>{const id=T.params.id;const name=DOCNAMES[id];const upd='Son güncelleme: 19.10.2026';
+ const seller=`<table><tr><td>Unvan</td><td>${co('unvan','Şirket unvanı')}</td></tr><tr><td>Marka</td><td>Mixsos</td></tr><tr><td>Adres</td><td>${co('adres','Merkez adresi')}</td></tr><tr><td>Vergi dairesi / No</td><td>${co('vergiDairesi','Vergi dairesi')} / ${co('vergiNo','Vergi no')}</td></tr><tr><td>MERSİS No</td><td>${co('mersis','MERSİS no')}</td></tr><tr><td>Ticaret Sicil No</td><td>${co('sicil','Ticaret sicil no')}</td></tr><tr><td>Telefon</td><td class="num">${co('tel','Telefon')}</td></tr><tr><td>E-posta</td><td>${co('eposta','E-posta')}</td></tr><tr><td>KEP adresi</td><td>${co('kep','KEP adresi')}</td></tr></table>`;
+ const t=totals();const b=branch();
+ const order=S.cart.length?`<table>${S.cart.map(l=>`<tr><td>${l.qty} × ${esc(prod(l.pid).name)}${l.opts.length?'<br><small>'+l.opts.map(o=>esc(o[1])).join(', ')+'</small>':''}</td><td class="num">${tl(l.unit*l.qty)}</td></tr>`).join('')}${S.poset?`<tr><td>${S.poset} × Poşet</td><td class="num">${tl(S.poset*POSET_PRICE)}</td></tr>`:''}${t.disc?`<tr><td>İndirim</td><td class="num">−${tl(t.disc)}</td></tr>`:''}<tr><td><b>Toplam (KDV dahil)</b></td><td class="num"><b>${tl(t.total)}</b></td></tr></table>`:'<p>Sözleşme konusu ürünler, sipariş sırasında sepet ve ödeme ekranında gösterilen ürünlerdir.</p>';
+ const buyer=S.user?`<table><tr><td>Ad Soyad</td><td>${esc(S.user.name)}</td></tr><tr><td>Telefon</td><td class="num">+90 ${esc(S.user.phone)}</td></tr><tr><td>Teslimat</td><td>${S.mode==='adres'&&S.address?esc([S.address.mah,S.address.sok,S.address.ilce,S.address.il].filter(Boolean).join(', ')):esc(b.name)+' (şubeden teslim)'}</td></tr></table>`:'<p>Uygulamaya kayıtlı ad, soyad, telefon ve teslimat bilgileri.</p>';
+ let h='';
+ if(id==='about')h=`<h2>Hakkımızda</h2>
+  <p>Kral Dönerci adıyla 10 yılda 23 şubeye ulaştık. Ardından bambaşka bir konsept ve anlayışla Mixsos’u kurduk; bugün toplam 40 şubemiz var. Tavuk döner, dürüm, burger, box menüler ve atıştırmalıklarla hizmet veriyoruz. Sloganımız: “Lezzette ısrarcıyız.”</p><p>Ürünlerimiz, Sakarya’daki 5.000 m² üretim tesisimizde veteriner hekim ve gıda mühendislerinin denetiminde üretilir ve soğuk zincirle şubelerimize ulaştırılır.</p>
+  <p>Mixsos uygulamasıyla menüyü inceleyebilir, siparişini şubeden teslim almak ya da şubede yemek üzere verebilir, kartla veya Mixsos Cüzdan ile güvenle ödeyebilirsin. Her tavuk döner siparişinde damga kazanır, 10 damgada bir tavuk döneri hediye alırsın.</p>
+  <h3>Şubelerimiz</h3><ul>${BR.map(x=>`<li><b>${esc(x.name)}</b>: ${esc(x.addr)}${x.tel?' · <span class="num">'+esc(x.tel)+'</span>':''} · Çalışma saatleri <span class="num">${x.hours}</span></li>`).join('')}</ul>
+  <h3>Şirket Bilgileri</h3>${seller}
+  <h3>Güvenli Alışveriş</h3><p>Uygulama ve web sitemiz 256-bit SSL sertifikasıyla şifrelenmiş bağlantı üzerinden çalışır. Kartlı ödemeler, lisanslı ödeme kuruluşu iyzico altyapısıyla 3D Secure doğrulamasıyla alınır. Kart bilgilerin Mixsos tarafından görülmez ve saklanmaz.</p>`;
+ if(id==='teslimat')h=`<h2>Teslimat ve İade Şartları</h2><p class="meta">${upd}</p>
+  <h3>1. Teslimat Yöntemleri</h3><ul><li><b>Şubeden Al (Gel-Al):</b> Sipariş seçtiğin şubede hazırlanır, hazır olduğunda kasadan teslim alırsın.</li><li><b>Şubede Servis:</b> Ödeme ekranında “Siparişimi şubede yemek istiyorum” seçeneğini işaretlersen siparişin masana servis edilir.</li><li><b>Adrese Teslim:</b> Hizmet verilen bölgelerde kullanılabilir. Teslimat ücreti varsa ödeme öncesinde sepet ekranında ayrıca gösterilir.</li></ul>
+  <h3>2. Hazırlama ve Teslim Süresi</h3><p>Siparişin ödeme onayının ardından şubeye iletilir. Hazırlanma durumu sipariş takip ekranından anlık izlenebilir. Gel-al siparişleri, hazır bildirimi sonrasında şubenin çalışma saatleri içinde teslim alınmalıdır.</p>
+  <h3>3. Cayma Hakkı</h3><p>Mesafeli Sözleşmeler Yönetmeliği’nin 15. maddesinin (1) fıkrasının (c) bendi uyarınca, çabuk bozulabilen gıda ürünlerinin teslimine ilişkin sözleşmelerde cayma hakkı kullanılamaz. Bu nedenle hazırlanmaya başlanan siparişler için cayma hakkı bulunmamaktadır.</p>
+  <h3>4. Sipariş İptali</h3><p>Siparişin hazırlanmaya başlamadan önce şubeyi arayarak iptal talebinde bulunabilirsin. İptal onaylanırsa ödemenin tamamı iade edilir. Hazırlanmaya başlanmış siparişler iptal edilemez.</p>
+  <h3>5. Hatalı, Eksik veya Kusurlu Ürün</h3><p>Teslim aldığın üründe eksiklik, yanlışlık veya kusur olması hâlinde teslim anında ya da en geç 24 saat içinde şubeye veya müşteri hizmetlerine bildirmen hâlinde ürün yeniden hazırlanır ya da bedeli iade edilir. Bu durumda 6502 sayılı Tüketicinin Korunması Hakkında Kanun’dan doğan seçimlik hakların saklıdır.</p>
+  <h3>6. İade Süreci</h3><ul><li>Kartla yapılan ödemelerin iadesi, ödemenin yapıldığı karta iyzico aracılığıyla yapılır. Tutarın kart hesabına yansıma süresi bankana göre değişir.</li><li>Mixsos Cüzdan ile yapılan ödemelerin iadesi cüzdan bakiyesine yapılır.</li><li>Kampanya ve damga hediyesiyle alınan ürünler için nakit iade yapılmaz.</li></ul>
+  <h3>7. İletişim</h3><p>Telefon: <span class="num">${co('tel','Telefon')}</span> · E-posta: ${co('eposta','E-posta')}</p>`;
+ if(id==='gizlilik')h=`<h2>Gizlilik Sözleşmesi ve Kişisel Verilerin Korunması Aydınlatma Metni</h2><p class="meta">${upd}</p>
+  <p>Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) kapsamında veri sorumlusu sıfatıyla ${co('unvan','Şirket unvanı')} (“Mixsos”) tarafından, Mixsos mobil uygulaması ve web sitesini kullananların kişisel verilerinin nasıl işlendiğini açıklamak amacıyla hazırlanmıştır.</p>
+  <h3>1. İşlenen Kişisel Veriler</h3><ul><li><b>Kimlik ve iletişim:</b> Ad, soyad, cep telefonu numarası, e-posta (verirsen).</li><li><b>Müşteri işlem:</b> Sipariş içeriği, seçilen şube, sipariş notu, sipariş geçmişi, damga ve cüzdan hareketleri, favoriler.</li><li><b>Teslimat:</b> Adrese teslim seçilirse teslimat adresi.</li><li><b>İşlem güvenliği:</b> IP adresi, cihaz ve uygulama bilgileri, oturum kayıtları.</li><li><b>Pazarlama:</b> İletişim tercihlerin (yalnızca onay vermen hâlinde).</li></ul>
+  <h3>2. Kart Bilgileri</h3><p>Kart numarası, son kullanma tarihi ve güvenlik kodu Mixsos sunucularına iletilmez ve Mixsos tarafından saklanmaz. Kartlı ödemeler, BDDK lisanslı ödeme kuruluşu iyzico tarafından PCI-DSS standartlarına uygun olarak işlenir. “Kartımı kaydet” seçeneğinde kart bilgisi iyzico tarafından saklanır; uygulamada yalnızca maskelenmiş kart numarası gösterilir.</p>
+  <h3>3. İşleme Amaçları</h3><ul><li>Siparişin alınması, hazırlanması, teslimi ve ödemenin tahsili,</li><li>Üyelik, damga kartı ve cüzdan hizmetlerinin sunulması,</li><li>Talep ve şikâyetlerin yanıtlanması,</li><li>Yasal yükümlülüklerin (fatura, vergi, tüketici mevzuatı) yerine getirilmesi,</li><li>Bilgi güvenliğinin sağlanması ve kötüye kullanımın önlenmesi,</li><li>Onay vermen hâlinde kampanya ve fırsat bildirimlerinin gönderilmesi.</li></ul>
+  <h3>4. Hukuki Sebepler</h3><p>Kişisel veriler; KVKK m.5/2-(c) sözleşmenin kurulması ve ifası, (ç) hukuki yükümlülüğün yerine getirilmesi, (f) meşru menfaat hukuki sebeplerine; pazarlama iletişimi için ise m.5/1 uyarınca açık rızana dayanılarak işlenir.</p>
+  <h3>5. Aktarım</h3><p>Kişisel veriler, yukarıdaki amaçlarla sınırlı olarak; ödeme hizmeti için iyzico’ya, SMS doğrulama ve bildirim hizmet sağlayıcılarına, barındırma ve altyapı hizmeti aldığımız iş ortaklarına ve yasal olarak yetkili kamu kurumlarına aktarılabilir. Yurt dışında bulunan altyapı sağlayıcılarına aktarım KVKK m.9 hükümlerine uygun olarak yapılır.</p>
+  <h3>6. Saklama Süresi</h3><p>Veriler, işleme amacının gerektirdiği süre ve ilgili mevzuatta öngörülen zamanaşımı süreleri boyunca saklanır; süre sonunda silinir, yok edilir veya anonim hâle getirilir. Hesabını silmen hâlinde yasal saklama yükümlülüğü bulunmayan veriler silinir.</p>
+  <h3>7. Çerezler ve Yerel Depolama</h3><p>Uygulama; sepetin, oturumun ve tercihlerin cihazında hatırlanması için yerel depolama kullanır. Bu veriler reklam amacıyla üçüncü kişilerle paylaşılmaz.</p>
+  <h3>8. Güvenlik</h3><p>Uygulama ile sunucular arasındaki tüm iletişim 256-bit SSL/TLS şifrelemesiyle korunur. Verilere erişim yetkili personelle sınırlıdır.</p>
+  <h3>9. Haklarınız</h3><p>KVKK m.11 uyarınca verilerinin işlenip işlenmediğini öğrenme, bilgi talep etme, düzeltilmesini veya silinmesini isteme, aktarıldığı kişileri bilme, itiraz etme ve zararın giderilmesini talep etme haklarına sahipsin. Başvurularını ${co('eposta','E-posta')} adresine veya ${co('adres','Merkez adresi')} adresine yazılı olarak iletebilirsin. Başvurular en geç 30 gün içinde ücretsiz olarak sonuçlandırılır.</p>`;
+ if(id==='mesafeli')h=`<h2>Mesafeli Satış Sözleşmesi</h2><p class="meta">${upd}</p>
+  <h3>Madde 1 – Taraflar</h3><p><b>1.1 Satıcı</b></p>${seller}<p style="margin-top:10px"><b>1.2 Alıcı</b></p>${buyer}
+  <h3>Madde 2 – Konu</h3><p>İşbu sözleşmenin konusu, Alıcı’nın Mixsos mobil uygulaması veya web sitesi üzerinden elektronik ortamda sipariş verdiği aşağıda nitelikleri ve satış fiyatı belirtilen ürünlerin satışı ve teslimine ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin belirlenmesidir.</p>
+  <h3>Madde 3 – Sözleşme Konusu Ürünler</h3>${order}<p>Fiyatlara KDV dahildir.</p>
+  <h3>Madde 4 – Ödeme</h3><p>Ödeme; kredi/banka kartıyla iyzico güvenli ödeme altyapısı ve 3D Secure doğrulamasıyla ya da Mixsos Cüzdan bakiyesiyle peşin olarak yapılır. Ödeme onaylanmadan sipariş hazırlanmaz.</p>
+  <h3>Madde 5 – Teslimat</h3><p>Ürünler, Alıcı’nın sipariş sırasında seçtiği yöntemle (şubeden teslim, şubede servis veya hizmet bölgesindeyse adrese teslim) teslim edilir. Teslimat şartları <b>Teslimat ve İade Şartları</b> sayfasında yer alır ve işbu sözleşmenin ekidir.</p>
+  <h3>Madde 6 – Cayma Hakkı</h3><p>Sözleşme konusu ürünler çabuk bozulabilen gıda ürünleri olduğundan, Mesafeli Sözleşmeler Yönetmeliği m.15/1-(c) uyarınca Alıcı’nın cayma hakkı bulunmamaktadır. Alıcı, siparişi onaylamadan önce bu hususta bilgilendirildiğini kabul eder.</p>
+  <h3>Madde 7 – Satıcının Yükümlülükleri</h3><p>Satıcı, ürünleri siparişe uygun, sağlam ve gıda mevzuatına uygun biçimde hazırlayıp teslim etmekle yükümlüdür. Ayıplı veya eksik ürünlerde Alıcı’nın 6502 sayılı Kanun’dan doğan seçimlik hakları saklıdır.</p>
+  <h3>Madde 8 – Uyuşmazlıkların Çözümü</h3><p>Uyuşmazlıklarda, Ticaret Bakanlığınca her yıl ilan edilen parasal sınırlar dâhilinde Alıcı’nın veya Satıcı’nın yerleşim yerindeki Tüketici Hakem Heyetleri, bu sınırları aşan durumlarda Tüketici Mahkemeleri yetkilidir.</p>
+  <h3>Madde 9 – Yürürlük</h3><p>Alıcı, ödeme ekranında bu sözleşmeyi ve Ön Bilgilendirme Formu’nu okuyup onayladığında sözleşme kurulmuş sayılır. Sözleşmenin bir örneği Alıcı’nın sipariş geçmişinde saklanır.</p>`;
+ if(id==='onbilgi')h=`<h2>Ön Bilgilendirme Formu</h2><p class="meta">${upd}</p>
+  <h3>1. Satıcı Bilgileri</h3>${seller}
+  <h3>2. Alıcı Bilgileri</h3>${buyer}
+  <h3>3. Ürünler ve Toplam Bedel</h3>${order}<p>Tüm fiyatlara vergiler dahildir. Gel-al ve şubede servis siparişlerinde ayrıca teslimat ücreti alınmaz.</p>
+  <h3>4. Ödeme ve Teslimat</h3><p>Ödeme, sipariş anında iyzico güvenli ödeme altyapısıyla kartla veya Mixsos Cüzdan ile yapılır. Sipariş, ödeme onayından sonra seçilen şubede hazırlanır ve seçilen yöntemle teslim edilir.</p>
+  <h3>5. Cayma Hakkı</h3><p>Çabuk bozulabilen gıda ürünleri olması nedeniyle Mesafeli Sözleşmeler Yönetmeliği m.15/1-(c) uyarınca cayma hakkı bulunmamaktadır.</p>
+  <h3>6. Şikâyet ve Başvuru</h3><p>Şikâyetlerini <span class="num">${co('tel','Telefon')}</span> numaralı telefona veya ${co('eposta','E-posta')} adresine iletebilirsin. Parasal sınırlar dâhilinde Tüketici Hakem Heyetlerine, aşan durumlarda Tüketici Mahkemelerine başvurabilirsin.</p>`;
+ return `${hdr(name)}<article class="doc">${h}</article>${trust()}`};
+
+// ---------- Katmanlar ----------
+function sheetHTML(){const s=T.sheet;if(!s)return '';
+ const wrap=(h)=>`<div class="scrim" data-a="closesheet"><div class="sheet" data-stop="1"><div class="grab"></div>${h}</div></div>`;
+ if(s==='upsell')return wrap(`<h3>Sana Eşlik Etsin!</h3>${UPSELL.map(prod).map(p=>`<div class="sl"><img src="img/p/${p.img}.jpg" alt=""><div class="t">${esc(p.name)}<span class="num">${tl(p.price)}</span></div><button class="plus" data-a="upadd" data-v="${p.id}" aria-label="Ekle">${I.plus(16)}</button></div>`).join('')}<div class="pad" style="margin-top:12px"><button class="btn btn-red" data-a="gocheckout">Ödemeye Geç</button></div>`);
+ if(s==='prev')return wrap(`<h3>Önceki Siparişlerim</h3><div class="hscroll">${S.orders.slice(0,5).map(prevCard).join('')}</div>`);
+ if(s==='pay')return wrap(`<h3>Ödeme Yöntemi</h3>${(LIVE_PAY?[]:S.cards).map((c,i)=>`<button class="row ${T.payWith==='saved'?'on':''}" data-a="pw" data-v="saved">${I.card(22)}<span class="l">${esc(c.name)}<br><small class="muted num">${esc(c.mask)}</small></span><span class="radio"></span></button>`).slice(0,1).join('')}
+  <button class="row ${T.payWith==='card'?'on':''}" data-a="pw" data-v="card">${I.card(22)}<span class="l">${LIVE_PAY?'Kredi / Banka Kartı (iyzico)':'Yeni Kart ile Öde'}</span><span class="radio"></span></button>
+  <button class="row ${T.payWith==='wallet'?'on':''}" data-a="pw" data-v="wallet">${I.wallet(22)}<span class="l">Mixsos Cüzdan<br><small class="muted num">${tl(S.wallet.bal+S.wallet.bonus)}</small></span><span class="radio"></span></button>`);
+ if(s==='topup')return wrap(`<h3>Para Yükle</h3><div class="pad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${[100,250,500,750,1000,2000].map(v=>`<button class="btn ${T.topup===v?'btn-ink':'btn-out'}" style="height:48px;border-radius:12px" data-a="tv" data-v="${v}">${v} TL</button>`).join('')}</div><p class="label pad" style="margin:10px 0">500 TL ve üzeri yüklemelerde %5 bonus.</p><div class="pad"><button class="btn btn-red" data-a="dotopup">Devam · ${tl(T.topup||250)}</button></div>`);
+ if(s==='name')return wrap(`<h3>Adın Soyadın</h3><form id="nameForm" class="pad" style="display:flex;flex-direction:column;gap:12px"><input class="input" id="nname" maxlength="40" value="${esc(S.user.name)}"><button class="btn btn-red" type="submit">Kaydet</button></form>`);
+ if(s==='invite'){const code='MX'+(S.user?S.user.phone.slice(-4):'0000');return wrap(`<h3>Arkadaşına Öner</h3><p class="label pad" style="text-align:center;line-height:1.5">Davet kodunu paylaş, arkadaşın uygulamayı indirsin.</p><div class="pad" style="margin-top:12px;display:flex;gap:8px"><span class="input num" style="display:flex;align-items:center;justify-content:center;font-weight:600;letter-spacing:3px;user-select:all">${code}</span><button class="btn btn-red" style="width:auto;padding:0 18px" data-a="copy" data-v="${code}">${I.copy(18)}</button></div>`)}
+ if(s==='clear')return wrap(`<h3>Sepet boşaltılsın mı?</h3><div class="pad" style="display:flex;gap:10px"><button class="btn btn-out" data-a="closesheet2">Vazgeç</button><button class="btn btn-red" data-a="doclear">Boşalt</button></div>`);
+ if(s==='notif')return wrap(`<h3>Bildirimler</h3><div class="empty" style="padding:20px">${I.bell(40)}<p>Yeni bildirimin yok. Sipariş durumu ve kampanyalar burada görünecek.</p></div>`);
+ return ''}
+
+// ---------- Render ----------
+function render(){clearTimers();stopBoxes();
+ $('#view').innerHTML=V[T.route]();
+ const showNav=TABS.includes(T.route)||['favs','orders','cards','prefs','help','track','doc'].includes(T.route);
+ const nav=$('#nav');nav.hidden=!showNav;if(showNav)nav.innerHTML=bottomNav();
+ const L=$('#layer');L.querySelectorAll('.scrim').forEach(e=>e.remove());if(T.sheet)L.insertAdjacentHTML('beforeend',sheetHTML());
+ after();startBoxes();}
+function after(){const r=T.route;
+ if(r==='home'){const sl=$('#slides'),cnt=$('#cnt');let i=0;
+   sl.addEventListener('scroll',()=>{i=Math.round(sl.scrollLeft/sl.clientWidth);cnt.textContent=(i+1)+'/'+SLIDES.length},{passive:true});
+   timers.push(setInterval(()=>{if(document.hidden)return;i=(i+1)%SLIDES.length;sl.scrollTo({left:i*sl.clientWidth,behavior:'smooth'})},4500));
+   const v=$('#view');const spy=()=>{let cur=CATS[0][0];for(const [id] of CATS){const el=$('#sec-'+id);if(el&&el.getBoundingClientRect().top<200)cur=id}if(cur!==T.cat){T.cat=cur;document.querySelectorAll('#chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.v===cur));const a=$(`#chips [data-v="${cur}"]`);a&&a.scrollIntoView({inline:'center',block:'nearest'})}};
+   v.onscroll=spy;
+   if(T.showPrev&&S.user&&S.orders.length&&T.storyDone){T.showPrev=false;T.sheet='prev';$('#layer').insertAdjacentHTML('beforeend',sheetHTML())}
+ } else $('#view').onscroll=null;
+ if(r==='search'){const q=$('#q');q.addEventListener('input',e=>{T.q=e.target.value;const p=e.target.selectionStart;render();const n=$('#q');n.focus();n.setSelectionRange(p,p)})}
+ if(r==='qr'&&S.user){if(!T.qr)T.qr=String(100000+Math.floor(Math.random()*900000));drawQR();
+   timers.push(setInterval(()=>{T.qrLeft--;if(T.qrLeft<=0){T.qrLeft=60;T.qr=String(100000+Math.floor(Math.random()*900000));rerender();return}const l=$('#qleft');if(l)l.textContent=T.qrLeft;document.querySelectorAll('#dots i').forEach((d,k)=>d.classList.toggle('off',k>=Math.ceil(T.qrLeft/3)))},1000))}
+ if(r==='track'){const o=S.orders.find(x=>x.no===T.params.no)||S.orders[0];if(o&&o.status<2)timers.push(setTimeout(()=>{o.status++;save();if(T.route==='track')rerender()},5000))}
+ if(r==='login'){$('#loginForm').addEventListener('submit',loginSubmit);const f=$('#phone')||$('#otp');f&&f.focus()}
+ if(r==='cardform'){bindCard();$('#cardForm').addEventListener('submit',cardSubmit)}
+ if(r==='threeds')$('#tdsForm').addEventListener('submit',e=>{e.preventDefault();if($('#tds').value!=='283126'){toast('Kod hatalı. Demo kodu: 283126',1);return}finishPay()});
+ if(r==='camps')$('#promoForm').addEventListener('submit',e=>{e.preventDefault();const c=($('#promo').value||'').trim().toLocaleUpperCase('tr');if(CODES[c]){if(!S.codes.includes(c))S.codes.push(c);save();toast(COUPONS[CODES[c]].title+' hesabına tanımlandı.')}else toast('Bu kod geçerli değil.',1)});
+ if(r==='checkout'){const n=$('#note');n&&n.addEventListener('input',e=>T.note=e.target.value)}
+ if(r==='branches'){const il=$('#il');il&&il.addEventListener('change',e=>{T.il=e.target.value;rerender()});const af=$('#addrForm');af&&af.addEventListener('submit',e=>{e.preventDefault();S.address={il:$('#ail').value,ilce:$('#ailce').value.trim(),mah:$('#amah').value.trim(),sok:$('#asok').value.trim(),tar:$('#atar').value.trim()};S.mode='adres';save();toast('Adres kaydedildi.');back()})}
+ const nf=$('#nameForm');nf&&nf.addEventListener('submit',e=>{e.preventDefault();const v=$('#nname').value.trim();if(v){S.user.name=v;save()}T.sheet=null;rerender();toast('Bilgilerin güncellendi.')});
+}
+function drawQR(){const c=$('#qrc');if(!c)return;const x=c.getContext('2d');const N=29;x.fillStyle='#fff';x.fillRect(0,0,N,N);x.fillStyle='#111';let s=+T.qr*7919;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+ for(let i=0;i<N;i++)for(let j=0;j<N;j++)if(r()>.52)x.fillRect(i,j,1,1);
+ [[0,0],[N-7,0],[0,N-7]].forEach(([a,b])=>{x.fillStyle='#fff';x.fillRect(Math.max(0,a-1),Math.max(0,b-1),9,9);x.fillStyle='#111';x.fillRect(a,b,7,7);x.fillStyle='#fff';x.fillRect(a+1,b+1,5,5);x.fillStyle='#111';x.fillRect(a+2,b+2,3,3)})}
+
+// ---------- iyzico ödeme ----------
+function lineSel(l){if(l.sel)return l.sel;const p=prod(l.pid);const sel={};(l.opts||[]).forEach(([gn,on])=>{const g=p.g.find(x=>x.name===gn);if(!g)return;const i=g.opts.findIndex(o=>o[0]===on);if(i>=0)(sel[g.id]=sel[g.id]||[]).push(i)});return sel}
+function busy(msg){const L=$('#layer');L.insertAdjacentHTML('beforeend',`<div class="scrim" id="busy" style="align-items:center;justify-content:center"><div class="card" style="text-align:center;max-width:300px;display:flex;flex-direction:column;gap:12px;align-items:center"><img src="img/pay/iyzico_ile_ode_colored_horizontal.svg" alt="iyzico ile Öde" style="height:28px"><p style="font-weight:500">${esc(msg)}</p><span class="ssl">${I.lock(14)} 256-bit SSL</span></div></div>`)}
+function unbusy(){const b=$('#busy');b&&b.remove()}
+async function startIyzico(kind,amount){
+ const ret=location.origin+location.pathname;
+ const b=branch();
+ const body=kind==='topup'?{kind,amount,ret,buyer:S.user}
+  :{kind:'order',ret,buyer:S.user,coupon:T.coupon,poset:S.poset,items:S.cart.map(l=>({pid:l.pid,qty:l.qty,sel:lineSel(l)})),
+    address:S.mode==='adres'&&S.address?[S.address.mah,S.address.sok,S.address.ilce,S.address.il].filter(Boolean).join(', '):b.name+', '+b.addr};
+ try{localStorage.setItem('mixsos.pending',JSON.stringify({kind,amount,coupon:T.coupon,note:T.note,dine:T.dineIn,at:Date.now()}))}catch(e){}
+ busy('iyzico güvenli ödeme sayfası açılıyor…');
+ try{
+  const r=await fetch(PAY_API+'/pay/init',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok||!d.paymentPageUrl)throw new Error(d.error||'Ödeme başlatılamadı');
+  if(kind!=='topup'&&Math.abs(d.total-totals().total)>0.01){unbusy();toast('Sepet tutarı güncellendi: '+tl(d.total),1)}
+  location.href=d.paymentPageUrl;
+ }catch(e){unbusy();toast(e.message||'Bağlantı hatası. Tekrar dene.',1)}
+}
+function handlePayReturn(){
+ const q=new URLSearchParams(location.search);const st=q.get('pay');if(!st)return false;
+ let pend=null;try{pend=JSON.parse(localStorage.getItem('mixsos.pending')||'null');localStorage.removeItem('mixsos.pending')}catch(e){}
+ try{history.replaceState(null,'',location.pathname)}catch(e){}
+ T.storyDone=true;
+ if(st==='success'){
+  if(q.get('kind')==='topup'){const a=Number(q.get('amount'))||(pend&&pend.amount)||0;S.wallet.bal+=a;if(a>=500)S.wallet.bonus+=Math.round(a*.05);save();go('qr');toast(tl(a)+' cüzdanına yüklendi.');return true}
+  if(pend){T.coupon=pend.coupon;T.note=pend.note||'';T.dineIn=!!pend.dine}
+  T.pay={kind:'iyzico',paymentId:q.get('pid')};placeOrder();toast('Ödeme alındı. Siparişin şubeye iletildi.');return true}
+ go(S.cart.length?'checkout':'home');if(pend){T.coupon=pend.coupon;T.note=pend.note||'';T.dineIn=!!pend.dine}rerender();toast(q.get('msg')||'Ödeme tamamlanamadı.',1);return true}
+
+// ---------- Formlar ----------
+function loginSubmit(e){e.preventDefault();
+ if(!T.otp){const v=$('#phone').value.replace(/\D/g,'').replace(/^0/,'');if(!/^5\d{9}$/.test(v)){toast('Numarayı 5 ile başlayan 10 hane olarak gir.',1);return}T.phone=v;T.otp=true;rerender();toast('Doğrulama kodu gönderildi.');return}
+ if($('#otp').value!=='123456'){toast('Kod hatalı. Demo kodu: 123456',1);return}
+ const name=$('#uname').value.trim()||'Mixsos Üyesi';S.user={name,phone:T.phone};T.otp=false;save();toast('Hoş geldin, '+name.split(' ')[0]+'!');
+ const n=T.afterLogin;T.afterLogin=null;T.stack.pop();if(n)go(n,{},{replace:true});else go('account')}
+function bindCard(){const m={cname:'name',cno:'no',cexp:'exp',ccvc:'cvc'};Object.keys(m).forEach(id=>{const el=$('#'+id);el.addEventListener('input',e=>{let v=e.target.value;
+ if(id==='cno'){v=v.replace(/\D/g,'').slice(0,16);e.target.value=v.replace(/(.{4})/g,'$1 ').trim()}
+ if(id==='cexp'){v=v.replace(/\D/g,'').slice(0,4);if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);e.target.value=v}
+ if(id==='ccvc'){v=v.replace(/\D/g,'').slice(0,4);e.target.value=v}T.card[m[id]]=v})})}
+function luhn(n){let s=0,d=false;for(let i=n.length-1;i>=0;i--){let x=+n[i];if(d){x*=2;if(x>9)x-=9}s+=x;d=!d}return s%10===0}
+function cardSubmit(e){e.preventDefault();const c=T.card;
+ if(c.name.trim().length<3)return toast('Kart üzerindeki ismi gir.',1);
+ if(c.no.length<15||!luhn(c.no))return toast('Kart numarası geçersiz.',1);
+ if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(c.exp))return toast('Son kullanma tarihini AA/YY olarak gir.',1);
+ if(c.cvc.length<3)return toast('CVC en az 3 haneli olmalı.',1);
+ go('threeds')}
+function finishPay(){
+ if(T.pay.kind==='card'&&T.card.save&&T.card.no){const mask=T.card.no.slice(0,6)+'******'+T.card.no.slice(-2);if(!S.cards.some(x=>x.mask===mask))S.cards.unshift({name:T.card.name,mask})}
+ if(T.pay.topup){const a=T.pay.amount;S.wallet.bal+=a;if(a>=500)S.wallet.bonus+=Math.round(a*.05);save();T.pay=null;T.stack=[];go('qr');toast(tl(a)+' cüzdanına yüklendi.');return}
+ placeOrder()}
+function placeOrder(){const t=totals();const d=new Date();
+ if(T.coupon==='free')S.stamps=Math.max(0,S.stamps-10);
+ const o={paymentId:T.pay&&T.pay.paymentId||null,no:String(100000+Math.floor(Math.random()*900000)),date:d.toLocaleDateString('tr-TR'),lines:S.cart.slice(),total:t.total,disc:t.disc,stamps:t.stamps,branch:S.mode==='adres'?'Adrese Teslim':branch().name,mode:S.mode,dine:T.dineIn,note:T.note,status:0};
+ S.orders.unshift(o);S.stamps+=t.stamps;S.cart=[];S.poset=0;T.coupon=null;T.consent=false;T.note='';T.noteOpen=false;T.pay=null;T.shownUpsell=false;save();T.stack=[];go('track',{no:o.no})}
+
+// ---------- Olaylar ----------
+document.addEventListener('click',e=>{
+ const el=e.target.closest('[data-a],[data-tab]');if(!el)return;
+ if(el.classList.contains('scrim')&&e.target!==el)return;
+ if(el.dataset.tab){go(el.dataset.tab);return}
+ const a=el.dataset.a,v=el.dataset.v;const p=v&&prod(v);
+ switch(a){
+  case 'back':uiBack();break;
+  case 'notif':T.sheet='notif';rerender();break;
+  case 'qr':go('qr');break;
+  case 'branches':T.tmpBranch=S.branch;T.brView='list';T.il=branch().il;go('branches');break;
+  case 'cat':{T.cat=v;document.querySelectorAll('#chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.v===v));const s=$('#sec-'+v);s&&s.scrollIntoView({behavior:'smooth',block:'start'});break}
+  case 'fav':{const i=S.favs.indexOf(v);if(i>=0)S.favs.splice(i,1);else{S.favs.push(v);toast('Favorilerine eklendi.')}save();rerender();break}
+  case 'openp':T.sel={};T.qty=1;T.tried=false;go('product',{id:v});break;
+  case 'quick':if(p.g.some(g=>g.req)){T.sel={};T.qty=1;T.tried=false;go('product',{id:v})}else{addLine(p,{},1);rerender();toast('Sepete Başarıyla Eklendi')}break;
+  case 'dec':removeOne(v);rerender();break;
+  case 'pq':T.qty=Math.max(1,T.qty+(+v));rerender();break;
+  case 'pick':{const pr=prod(T.params.id);const g=pr.g.find(x=>x.id===el.dataset.g);const i=+el.dataset.i;let s=T.sel[g.id]||[];
+    if(g.max===1)s=[i];else if(s.includes(i))s=s.filter(x=>x!==i);else if(s.length<g.max)s=[...s,i];else{toast('En fazla '+g.max+' seçim yapabilirsin.',1);break}T.sel[g.id]=s;rerender();break}
+  case 'addcart':{const pr=prod(T.params.id);const miss=pr.g.find(g=>g.req&&!(T.sel[g.id]||[]).length);
+    if(miss){T.tried=true;rerender();const g=$('#g-'+miss.id);g&&g.scrollIntoView({behavior:'smooth',block:'center'});toast(miss.name+' zorunlu.',1);break}
+    addLine(pr,T.sel,T.qty);playAdd(()=>{back();toast('Sepete Başarıyla Eklendi')});break}
+  case 'cq':{const l=S.cart[+el.dataset.i];l.qty+=+v;if(l.qty<1)S.cart.splice(+el.dataset.i,1);save();rerender();break}
+  case 'poset':S.poset=Math.max(0,S.poset+(+v));save();rerender();break;
+  case 'upadd':addLine(p,{},1);rerender();toast(p.name+' eklendi.');break;
+  case 'clear':T.sheet='clear';rerender();break;
+  case 'doclear':S.cart=[];S.poset=0;save();T.sheet=null;rerender();toast('Sepet boşaltıldı.');break;
+  case 'closesheet2':T.sheet=null;rerender();break;
+  case 'tocheckout':if(needLogin('cart'))break;if(!T.shownUpsell){T.shownUpsell=true;T.sheet='upsell';rerender();break}go('checkout');break;
+  case 'gocheckout':T.sheet=null;go('checkout');break;
+  case 'dine':T.dineIn=!T.dineIn;rerender();break;
+  case 'note':T.noteOpen=!T.noteOpen;rerender();break;
+  case 'paysheet':T.sheet='pay';rerender();break;
+  case 'pw':T.payWith=v;T.sheet=null;rerender();break;
+  case 'coupon':T.coupon=T.coupon===v?null:v;rerender();if(T.coupon)toast('Kampanya uygulandı.');break;
+  case 'consent':T.consent=!T.consent;rerender();break;
+  case 'doc':e.stopPropagation();go('doc',{id:v});break;
+  case 'pay':{if(!T.consent){toast('Devam etmek için sözleşmeleri onayla.',1);const c=document.querySelector('.consent');c&&c.scrollIntoView({behavior:'smooth',block:'center'});break}const t=totals();
+    if(T.payWith==='wallet'){if(S.wallet.bal+S.wallet.bonus<t.total){toast('Cüzdan bakiyen yetersiz. Önce para yükle.',1);break}let r=t.total;const fb=Math.min(S.wallet.bonus,r);S.wallet.bonus-=fb;r-=fb;S.wallet.bal-=r;T.pay={kind:'wallet'};placeOrder();break}
+    if(LIVE_PAY){startIyzico('order');break}
+    if(T.payWith==='saved'&&S.cards.length){T.pay={kind:'saved',amount:t.total};go('threeds');break}
+    T.pay={kind:'card',amount:t.total};go('cardform');break}
+  case 'testcard':T.card=Object.assign(T.card,{name:'Test Kullanıcı',no:'5528790000000008',exp:'12/30',cvc:'123'});rerender();break;
+  case 'savecard':T.card.save=!T.card.save;rerender();break;
+  case 'opencamp':go('camp',{id:v});break;
+  case 'login':T.otp=false;T.phone=S.user?S.user.phone:'';go('login');break;
+  case 'chphone':T.otp=false;rerender();break;
+  case 'logout':S.user=null;save();go('account');toast('Çıkış yapıldı.');break;
+  case 'editname':T.sheet='name';rerender();break;
+  case 'invite':T.sheet='invite';rerender();break;
+  case 'favs':case 'orders':case 'cards':case 'prefs':case 'help':go(a);break;
+  case 'pref':S.prefs[v]=!S.prefs[v];save();rerender();break;
+  case 'rmcard':S.cards.splice(+v,1);save();rerender();break;
+  case 'reorder':{const o=S.orders.find(x=>x.no===v);o.lines.forEach(l=>{const ex=S.cart.find(c=>c.key===l.key);if(ex)ex.qty+=l.qty;else S.cart.push(Object.assign({},l))});save();T.sheet=null;go('cart');toast('Sipariş sepete eklendi.');break}
+  case 'track':T.sheet=null;go('track',{no:v});break;
+  case 'newqr':T.qr=String(100000+Math.floor(Math.random()*900000));T.qrLeft=60;rerender();break;
+  case 'topup':if(needLogin('qr'))break;T.topup=T.topup||250;T.sheet='topup';rerender();break;
+  case 'tv':T.topup=+v;rerender();break;
+  case 'dotopup':if(LIVE_PAY){T.sheet=null;rerender();startIyzico('topup',T.topup);break}T.sheet=null;T.pay={kind:'card',topup:true,amount:T.topup};go('cardform');break;
+  case 'mode':S.mode=v;save();rerender();break;
+  case 'brview':T.brView=v;rerender();break;
+  case 'brpick':T.tmpBranch=v;rerender();break;
+  case 'brok':{const b=BR.find(x=>x.id===(T.tmpBranch||S.branch));S.branch=b.id;S.mode='gelal';save();back();toast(b.name+' seçildi.');break}
+  case 'qset':T.q=v;rerender();break;
+  case 'copy':(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast('Kopyalandı.')).catch(()=>toast('Metni seçip kopyalayabilirsin.',1));break;
+  case 'closesheet':if(e.target===el){T.sheet=null;rerender()}break;
+  case 'story':closeStory();go('camp',{id:'kebabi'});break;
+  case 'storyx':closeStory();break;
+ }
+});
+function closeStory(){const s=$('.story');s&&s.remove();T.storyDone=true;if(T.route==='home')rerender()}
+
+// ---------- Açılış ----------
+function hashDoc(){const h=(location.hash||'').slice(1);return DOCS[h]||null}
+window.addEventListener('hashchange',()=>{const d=hashDoc();if(d)go('doc',{id:d})});
+render();
+(function boot(){if(handlePayReturn())return;const deep=hashDoc();if(deep){T.storyDone=true;go('doc',{id:deep});return}const L=$('#layer');
+ L.insertAdjacentHTML('beforeend',`<div class="splash"><img class="bg" src="img/b/splash.jpg" alt=""><img class="lg" src="img/logo-white.png" alt="Mixsos"><span class="pw">Powered by <b>Lokus Studio</b></span></div>`);
+ setTimeout(()=>{const s=$('.splash');s&&s.remove();
+   L.insertAdjacentHTML('beforeend',`<div class="story"><div class="pb"><i></i></div><button class="x" data-a="storyx" aria-label="Kapat">${I.close(28)}</button><button data-a="story" style="flex:1;display:block" aria-label="Kampanyaya git"><img src="img/k5.jpg" alt="Kebabi, yeni ürün"></button><div class="go"><button class="btn btn-red" data-a="story">Hemen Dene</button></div></div>`);
+   setTimeout(()=>{if($('.story'))closeStory()},6000)},1800)})();
+</script>
+</body>
+</html>
