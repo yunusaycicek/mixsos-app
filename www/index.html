@@ -431,6 +431,9 @@ const POSET_PRICE=1;
 const PAY_API='__PAY_API__';
 const PAY_MODE='__PAY_MODE__';
 const LIVE_PAY=/^https:\/\//.test(PAY_API);
+// Online ödeme canlıya alınana kadar false: sepette uyarı gösterilir, ödeme ve bakiye yükleme kapalıdır.
+const ORDERS_OPEN=false;
+const telHref=t=>'tel:+90'+String(t).replace(/\D/g,'').replace(/^0/,'');
 // Şirket bilgileri: boş alanlar sayfalarda sarı işaretle görünür. Doldurmak için yalnızca burayı düzenle.
 const COMPANY={
  unvan:'Adilezzet Hayvancılık Et ve Et Mamülleri Sanayi Ticaret Limited Şirketi',
@@ -576,7 +579,8 @@ V.cart=()=>{const t=totals();const b=branch();
   <div class="r"><span class="p num">${tl(l.unit*l.qty)}</span><span class="stepper"><button class="s l" data-a="cq" data-i="${i}" data-v="-1" aria-label="Azalt">${l.qty>1?I.minus(18):I.trash(18)}</button><span class="num">${l.qty}</span><button class="s b" data-a="cq" data-i="${i}" data-v="1" aria-label="Artır">${I.plus(16)}</button></span></div></div>`}).join('')}
  <div class="ci"><h4>Poşet</h4><div class="r"><span class="p num">${tl(S.poset*POSET_PRICE)}</span><span class="stepper">${S.poset?`<button class="s l" data-a="poset" data-v="-1" aria-label="Azalt">${I.minus(18)}</button><span class="num">${S.poset}</span>`:''}<button class="s ${S.poset?'b':'l'}" data-a="poset" data-v="1" aria-label="Poşet ekle">${I.plus(16)}</button></span></div><div class="o" style="margin-top:6px">Çevre mevzuatı gereği poşet ücretlidir.</div></div>
  <section class="sec"><h3>Sana Eşlik Etsin</h3></section><div class="hscroll">${UPSELL.map(prod).map(p=>`<div class="up"><img src="img/p/${p.img}.jpg" alt="${esc(p.name)}" loading="lazy"><span class="n">${esc(p.name)}</span><span class="bt"><span class="num">${tl(p.price)}</span><button class="sqplus" data-a="upadd" data-v="${p.id}" aria-label="Ekle">${I.plus(16)}</button></span></div>`).join('')}</div>
- <div style="height:10px"></div><div class="bottom"><div class="paybar"><span class="t num">${tl(t.total)}</span><button class="btn btn-red" data-a="tocheckout">Devam Et</button></div></div>`};
+ ${ORDERS_OPEN?'':`<div class="note" style="margin:14px 16px 0"><b>Online sipariş çok yakında!</b> Uygulamadan ödeme şu an kapalı. Siparişin için ${esc(b.name)}’ni arayabilir ya da şubeye gelebilirsin.</div>`}
+ <div style="height:10px"></div><div class="bottom"><div class="paybar"><span class="t num">${tl(t.total)}</span>${ORDERS_OPEN?'<button class="btn btn-red" data-a="tocheckout">Devam Et</button>':`<a class="btn btn-red" style="text-decoration:none;color:#fff" href="${telHref(b.tel)}">Şubeyi Ara</a>`}</div></div>`};
 
 V.checkout=()=>{const t=totals();const b=branch();const card=LIVE_PAY?null:S.cards[0];const free=Math.floor(S.stamps/10)>0;
  const camps=[['elit',COUPONS.elit.title]];if(free)camps.unshift(['free','Hediye Döner (damga kartından)']);
@@ -868,7 +872,7 @@ document.addEventListener('click',e=>{
   case 'clear':T.sheet='clear';rerender();break;
   case 'doclear':S.cart=[];S.poset=0;save();T.sheet=null;rerender();toast('Sepet boşaltıldı.');break;
   case 'closesheet2':T.sheet=null;rerender();break;
-  case 'tocheckout':if(needLogin('cart'))break;if(!T.shownUpsell){T.shownUpsell=true;T.sheet='upsell';rerender();break}go('checkout');break;
+  case 'tocheckout':if(!ORDERS_OPEN){toast('Online sipariş çok yakında. Şimdilik şubeyi arayabilirsin.');break}if(needLogin('cart'))break;if(!T.shownUpsell){T.shownUpsell=true;T.sheet='upsell';rerender();break}go('checkout');break;
   case 'gocheckout':T.sheet=null;go('checkout');break;
   case 'dine':T.dineIn=!T.dineIn;rerender();break;
   case 'note':T.noteOpen=!T.noteOpen;rerender();break;
@@ -877,7 +881,7 @@ document.addEventListener('click',e=>{
   case 'coupon':T.coupon=T.coupon===v?null:v;rerender();if(T.coupon)toast('Kampanya uygulandı.');break;
   case 'consent':T.consent=!T.consent;rerender();break;
   case 'doc':e.stopPropagation();go('doc',{id:v});break;
-  case 'pay':{if(!T.consent){toast('Devam etmek için sözleşmeleri onayla.',1);const c=document.querySelector('.consent');c&&c.scrollIntoView({behavior:'smooth',block:'center'});break}const t=totals();
+  case 'pay':{if(!ORDERS_OPEN){toast('Online sipariş çok yakında.');break}if(!T.consent){toast('Devam etmek için sözleşmeleri onayla.',1);const c=document.querySelector('.consent');c&&c.scrollIntoView({behavior:'smooth',block:'center'});break}const t=totals();
     if(T.payWith==='wallet'){if(S.wallet.bal+S.wallet.bonus<t.total){toast('Cüzdan bakiyen yetersiz. Önce para yükle.',1);break}let r=t.total;const fb=Math.min(S.wallet.bonus,r);S.wallet.bonus-=fb;r-=fb;S.wallet.bal-=r;T.pay={kind:'wallet'};placeOrder();break}
     if(LIVE_PAY){startIyzico('order');break}
     if(T.payWith==='saved'&&S.cards.length){T.pay={kind:'saved',amount:t.total};go('threeds');break}
@@ -896,7 +900,7 @@ document.addEventListener('click',e=>{
   case 'reorder':{const o=S.orders.find(x=>x.no===v);o.lines.forEach(l=>{const ex=S.cart.find(c=>c.key===l.key);if(ex)ex.qty+=l.qty;else S.cart.push(Object.assign({},l))});save();T.sheet=null;go('cart');toast('Sipariş sepete eklendi.');break}
   case 'track':T.sheet=null;go('track',{no:v});break;
   case 'newqr':T.qr=String(100000+Math.floor(Math.random()*900000));T.qrLeft=60;rerender();break;
-  case 'topup':if(needLogin('qr'))break;T.topup=T.topup||250;T.sheet='topup';rerender();break;
+  case 'topup':if(!ORDERS_OPEN){toast('Bakiye yükleme çok yakında.');break}if(needLogin('qr'))break;T.topup=T.topup||250;T.sheet='topup';rerender();break;
   case 'tv':T.topup=+v;rerender();break;
   case 'dotopup':if(LIVE_PAY){T.sheet=null;rerender();startIyzico('topup',T.topup);break}T.sheet=null;T.pay={kind:'card',topup:true,amount:T.topup};go('cardform');break;
   case 'mode':S.mode=v;save();rerender();break;
