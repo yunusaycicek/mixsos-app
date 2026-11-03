@@ -55,7 +55,7 @@ jobs:
             keytool -genkeypair -storetype PKCS12 -keystore ci/upload.p12 -alias upload \
               -keyalg RSA -keysize 4096 -validity 10000 \
               -storepass "$KEY_PASS" -keypass "$KEY_PASS" \
-              -dname "CN=MIXSOS, O=MIXSOS, L=Istanbul, C=TR" 2>&1 | grep -iv "pass" || true
+              -dname "CN=MIXSOS, O=MIXSOS, L=Istanbul, C=TR" 2>&1 || true
             [ -f ci/upload.p12 ] || { echo "::error::keytool anahtar üretemedi"; exit 1; }
             git config user.name "github-actions"
             git config user.email "github-actions@users.noreply.github.com"
