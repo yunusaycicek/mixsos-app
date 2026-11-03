@@ -85,7 +85,6 @@ jobs:
 
       - name: AAB derle
         working-directory: android
-        env:
         run: |
           chmod +x gradlew
           export ORG_GRADLE_PROJECT_mixsosKeyPass="$KEY_PASS"
