@@ -1,0 +1,110 @@
+name: Android — Google Play paketi (AAB)
+
+# Commit mesajında [play] geçtiğinde ya da Actions'tan elle çalıştırıldığında
+# Google Play'e yüklenecek imzalı .aab dosyasını üretir ve "play" sürüm sayfasına koyar.
+#
+# İmza: Play App Signing açık; buradaki anahtar yalnızca "yükleme anahtarı"dır.
+# Anahtar dosyası (ci/upload.p12) ilk çalıştırmada üretilip depoya eklenir; ANDROID_KEY_PASSWORD
+# secret'ı ile şifrelidir. Şifre yalnızca GitHub secret'ında durur.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: play
+  cancel-in-progress: false
+
+jobs:
+  aab:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[play]')
+    runs-on: ubuntu-latest
+    env:
+      SECRET_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      VERSION_NAME: "2.0.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Şifre tanımlı mı
+        id: mode
+        run: |
+          if [ ${#SECRET_PASS} -lt 12 ]; then
+            echo "::warning::ANDROID_KEY_PASSWORD tanımlı değil (ya da 12 karakterden kısa). Yalnızca deneme derlemesi yapılır, dosya yayınlanmaz."
+            P=$(openssl rand -hex 16); echo "::add-mask::$P"; echo "KEY_PASS=$P" >> "$GITHUB_ENV"; echo "trial=true" >> "$GITHUB_OUTPUT"
+            keytool -genkeypair -storetype PKCS12 -keystore "$RUNNER_TEMP/trial.p12" -alias upload -keyalg RSA -keysize 2048 -validity 1 -storepass "$P" -keypass "$P" -dname "CN=trial" >/dev/null 2>&1
+            echo "KEYSTORE=$RUNNER_TEMP/trial.p12" >> "$GITHUB_ENV"
+          else
+            echo "KEY_PASS=$SECRET_PASS" >> "$GITHUB_ENV"
+            echo "KEYSTORE=$GITHUB_WORKSPACE/ci/upload.p12" >> "$GITHUB_ENV"
+          fi
+
+      - name: Yükleme anahtarı (yoksa üret ve depoya ekle)
+        if: steps.mode.outputs.trial != 'true'
+        run: |
+          if [ ! -f ci/upload.p12 ]; then
+            keytool -genkeypair -v -storetype PKCS12 -keystore ci/upload.p12 -alias upload \
+              -keyalg RSA -keysize 4096 -validity 10000 \
+              -storepass "$KEY_PASS" -keypass "$KEY_PASS" \
+              -dname "CN=MIXSOS, O=MIXSOS, L=Istanbul, C=TR" > /dev/null 2>&1
+            git config user.name "github-actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add ci/upload.p12
+            git commit -qm "Android yükleme anahtarı (şifreli) [skip ci]"
+            git push -q origin HEAD:main
+            echo "::notice::Yeni yükleme anahtarı üretildi"
+          fi
+          keytool -list -storetype PKCS12 -keystore ci/upload.p12 -storepass "$KEY_PASS" > /dev/null \
+            || { echo "::error::ANDROID_KEY_PASSWORD ci/upload.p12 dosyasını açmıyor"; exit 1; }
+          keytool -exportcert -rfc -storetype PKCS12 -keystore ci/upload.p12 -alias upload -storepass "$KEY_PASS" > upload_cert.pem
+          keytool -list -v -storetype PKCS12 -keystore ci/upload.p12 -storepass "$KEY_PASS" | grep -E "SHA1:|SHA256:" | sed 's/^/::notice::Yükleme anahtarı /'
+
+      - name: Android projesini oluştur
+        run: |
+          rm -rf shell/app && cp -r www shell/app
+          npm install
+          npx cap add android
+          npx cap sync android
+
+      - name: Mixsos ikonu ve açılış görseli
+        run: |
+          pip install --quiet pillow
+          python3 ci/brand.py android/app/src/main/res www/img/logo-white.png
+
+      - name: Play gereksinimleri (API 36), sürüm ve imza ayarı
+        run: python3 ci/play_gradle.py android "$VERSION_NAME" "${{ github.run_number }}" "$KEYSTORE"
+
+      - name: AAB derle
+        working-directory: android
+        env:
+        run: |
+          chmod +x gradlew
+          export ORG_GRADLE_PROJECT_mixsosKeyPass="$KEY_PASS"
+          ./gradlew bundleRelease --no-daemon --stacktrace > "$RUNNER_TEMP/gradle.log" 2>&1 || {
+            grep -E "error:|What went wrong|FAILURE|> " "$RUNNER_TEMP/gradle.log" | head -n 15 | sed 's/^/::error::/'; tail -n 60 "$RUNNER_TEMP/gradle.log"; exit 1; }
+          tail -n 5 "$RUNNER_TEMP/gradle.log"
+          cp app/build/outputs/bundle/release/app-release.aab ../Mixsos.aab
+          ls -la ../Mixsos.aab
+          echo "::notice::Mixsos.aab hazır — sürüm $VERSION_NAME (kod ${{ github.run_number }})"
+
+      - name: "play sürüm sayfasına koy"
+        if: steps.mode.outputs.trial != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: play
+          name: "Google Play paketi"
+          body: "Google Play Console'a yüklenecek dosya: Mixsos.aab (sürüm ${{ env.VERSION_NAME }}, kod ${{ github.run_number }}). Telefona kurmak için değil, Play Console'a yüklemek içindir."
+          files: |
+            Mixsos.aab
+            upload_cert.pem
+          prerelease: true
+          make_latest: false
