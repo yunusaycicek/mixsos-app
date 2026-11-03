@@ -52,15 +52,16 @@ jobs:
         if: steps.mode.outputs.trial != 'true'
         run: |
           if [ ! -f ci/upload.p12 ]; then
-            keytool -genkeypair -v -storetype PKCS12 -keystore ci/upload.p12 -alias upload \
+            keytool -genkeypair -storetype PKCS12 -keystore ci/upload.p12 -alias upload \
               -keyalg RSA -keysize 4096 -validity 10000 \
               -storepass "$KEY_PASS" -keypass "$KEY_PASS" \
-              -dname "CN=MIXSOS, O=MIXSOS, L=Istanbul, C=TR" > /dev/null 2>&1
+              -dname "CN=MIXSOS, O=MIXSOS, L=Istanbul, C=TR" 2>&1 | grep -iv "pass" || true
+            [ -f ci/upload.p12 ] || { echo "::error::keytool anahtar üretemedi"; exit 1; }
             git config user.name "github-actions"
             git config user.email "github-actions@users.noreply.github.com"
             git add ci/upload.p12
             git commit -qm "Android yükleme anahtarı (şifreli) [skip ci]"
-            git push -q origin HEAD:main
+            git push -q origin HEAD:main || { echo "::error::Anahtar depoya gönderilemedi"; exit 1; }
             echo "::notice::Yeni yükleme anahtarı üretildi"
           fi
           keytool -list -storetype PKCS12 -keystore ci/upload.p12 -storepass "$KEY_PASS" > /dev/null \
