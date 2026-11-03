@@ -44,7 +44,9 @@ jobs:
             keytool -genkeypair -storetype PKCS12 -keystore "$RUNNER_TEMP/trial.p12" -alias upload -keyalg RSA -keysize 2048 -validity 1 -storepass "$P" -keypass "$P" -dname "CN=trial" >/dev/null 2>&1
             echo "KEYSTORE=$RUNNER_TEMP/trial.p12" >> "$GITHUB_ENV"
           else
-            echo "KEY_PASS=$SECRET_PASS" >> "$GITHUB_ENV"
+            # keytool yalnızca ASCII şifre kabul ediyor; secret'tan sabit bir ASCII şifre türetilir.
+            P=$(printf '%s' "$SECRET_PASS" | sha256sum | cut -c1-40); echo "::add-mask::$P"
+            echo "KEY_PASS=$P" >> "$GITHUB_ENV"
             echo "KEYSTORE=$GITHUB_WORKSPACE/ci/upload.p12" >> "$GITHUB_ENV"
           fi
 
