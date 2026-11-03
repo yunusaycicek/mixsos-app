@@ -26,6 +26,8 @@ def edit(rel, fn):
 
 
 edit("variables.gradle", lambda s: re.sub(r"(compileSdkVersion|targetSdkVersion)\s*=\s*\d+", lambda m: f"{m.group(1)} = {SDK}", s))
+# Play otomatik koruma en az API 24 istiyor
+edit("variables.gradle", lambda s: re.sub(r"minSdkVersion\s*=\s*\d+", "minSdkVersion = 24", s))
 edit("build.gradle", lambda s: re.sub(r"com\.android\.tools\.build:gradle:[\d.]+", f"com.android.tools.build:gradle:{AGP}", s))
 edit("gradle/wrapper/gradle-wrapper.properties", lambda s: re.sub(r"gradle-[\d.]+-(all|bin)\.zip", f"gradle-{GRADLE}-all.zip", s))
 
