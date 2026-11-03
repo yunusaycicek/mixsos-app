@@ -446,8 +446,8 @@ const COMPANY={
  web:'mixsos.com'
 };
 const co=(k,label)=>COMPANY[k]?esc(COMPANY[k]):`<span class="ph">[${label}]</span>`;
-const DOCS={hakkimizda:'about','teslimat-iade':'teslimat',gizlilik:'gizlilik','mesafeli-satis':'mesafeli','on-bilgilendirme':'onbilgi'};
-const DOCNAMES={about:'Hakkımızda',teslimat:'Teslimat ve İade Şartları',gizlilik:'Gizlilik Sözleşmesi',mesafeli:'Mesafeli Satış Sözleşmesi',onbilgi:'Ön Bilgilendirme Formu'};
+const DOCS={hakkimizda:'about','teslimat-iade':'teslimat',gizlilik:'gizlilik','mesafeli-satis':'mesafeli','on-bilgilendirme':'onbilgi','hesap-silme':'hesapsil'};
+const DOCNAMES={about:'Hakkımızda',teslimat:'Teslimat ve İade Şartları',gizlilik:'Gizlilik Sözleşmesi',mesafeli:'Mesafeli Satış Sözleşmesi',onbilgi:'Ön Bilgilendirme Formu',hesapsil:'Hesap ve Veri Silme'};
 
 // ---------- Durum ----------
 const KEY='mixsos.v2';
@@ -646,7 +646,7 @@ V.account=()=>{if(!S.user)return `${hdr('Hesabım',{back:false,right:`<button da
 function menuRows(auth){const r=[['share','Arkadaşına Öner','invite',1],['wallet','Mixsos Cüzdan','qr',1],['heart','Favorilerim','favs',1],['bag','Önceki Siparişlerim','orders',1],['card','Kayıtlı Kartlarım','cards',1],['bell','İletişim Tercihleri','prefs',1],['help','Yardım Merkezi','help',0],['store','Şubeler','branches',0]];
  return r.filter(x=>auth||!x[3]).map(([ic,l,a])=>`<button class="row" data-a="${a}">${I[ic](20)}<span class="l">${l}</span>${I.right(18)}</button>`).join('')
  +`<section class="sec"><h3>Kurumsal</h3></section>`+Object.entries(DOCNAMES).map(([k,n])=>`<button class="row" data-a="doc" data-v="${k}">${I[k==='about'?'store':'note'](20)}<span class="l">${n}</span>${I.right(18)}</button>`).join('')
- +(auth?`<button class="row" data-a="logout">${I.logout(20)}<span class="l">Çıkış Yap</span>${I.right(18)}</button>`:'')+`<div class="ver"><span>Uygulama Versiyonu</span><span>1.0.0</span></div>${trust()}`}
+ +(auth?`<button class="row" data-a="logout">${I.logout(20)}<span class="l">Çıkış Yap</span>${I.right(18)}</button><button class="row" data-a="delacct">${I.trash(20)}<span class="l" style="color:var(--red)">${T.delConfirm?'Silmek için tekrar dokun':'Hesabımı Sil'}</span>${I.right(18)}</button>`:'')+`<div class="ver"><span>Uygulama Versiyonu</span><span>1.0.0</span></div>${trust()}`}
 
 V.login=()=>`${hdr('Giriş Yap')}<form class="card" id="loginForm" style="display:flex;flex-direction:column;gap:14px;margin-top:16px">
  ${!T.otp?`<h3 style="font-size:19px;font-weight:600">Telefon numaranla devam et</h3><p class="label" style="line-height:1.5">Hesabın yoksa otomatik oluşturulur. Numarana tek kullanımlık doğrulama kodu göndereceğiz.</p>
@@ -732,6 +732,11 @@ V.doc=()=>{const id=T.params.id;const name=DOCNAMES[id];const upd='Son güncelle
   <h3>Madde 7 – Satıcının Yükümlülükleri</h3><p>Satıcı, ürünleri siparişe uygun, sağlam ve gıda mevzuatına uygun biçimde hazırlayıp teslim etmekle yükümlüdür. Ayıplı veya eksik ürünlerde Alıcı’nın 6502 sayılı Kanun’dan doğan seçimlik hakları saklıdır.</p>
   <h3>Madde 8 – Uyuşmazlıkların Çözümü</h3><p>Uyuşmazlıklarda, Ticaret Bakanlığınca her yıl ilan edilen parasal sınırlar dâhilinde Alıcı’nın veya Satıcı’nın yerleşim yerindeki Tüketici Hakem Heyetleri, bu sınırları aşan durumlarda Tüketici Mahkemeleri yetkilidir.</p>
   <h3>Madde 9 – Yürürlük</h3><p>Alıcı, ödeme ekranında bu sözleşmeyi ve Ön Bilgilendirme Formu’nu okuyup onayladığında sözleşme kurulmuş sayılır. Sözleşmenin bir örneği Alıcı’nın sipariş geçmişinde saklanır.</p>`;
+ if(id==='hesapsil')h=`<h2>Hesap ve Veri Silme</h2><p class="meta">${upd}</p>
+<p>MIXSOS uygulamasındaki hesabını ve verilerini istediğin zaman silebilirsin.</p>
+<h3>Uygulamadan silme</h3><p>Hesabım › <b>Hesabımı Sil</b> adımlarını izle ve onayla. Bu cihazdaki ad, telefon, adres, sepet, favoriler, damga ve sipariş geçmişi hemen silinir.</p>
+<h3>E-posta ile silme talebi</h3><p>Uygulamaya erişemiyorsan kayıtlı telefon numaranla birlikte ${co('eposta','E-posta')} adresine “Hesap silme talebi” konulu bir e-posta gönder. Talebin en geç 30 gün içinde sonuçlandırılır.</p>
+<h3>Silinen ve saklanan veriler</h3><p>Ad, telefon, adres, favoriler, damga ve iletişim tercihleri silinir. Tamamlanmış ödemelere ait fatura ve işlem kayıtları, vergi ve ticari mevzuat gereği yasal saklama süresi (10 yıl) boyunca saklanır; ödeme kayıtları iyzico tarafından kendi yasal yükümlülükleri kapsamında tutulur.</p>`;
  if(id==='onbilgi')h=`<h2>Ön Bilgilendirme Formu</h2><p class="meta">${upd}</p>
   <h3>1. Satıcı Bilgileri</h3>${seller}
   <h3>2. Alıcı Bilgileri</h3>${buyer}
@@ -891,6 +896,7 @@ document.addEventListener('click',e=>{
   case 'opencamp':go('camp',{id:v});break;
   case 'login':T.otp=false;T.phone=S.user?S.user.phone:'';go('login');break;
   case 'chphone':T.otp=false;rerender();break;
+  case 'delacct':if(!T.delConfirm){T.delConfirm=true;rerender();toast('Hesabın ve bu cihazdaki tüm verilerin silinecek. Onaylamak için tekrar dokun.',1);break}try{localStorage.removeItem('mixsos.v2');localStorage.removeItem('mixsos.pending')}catch(e){}location.hash='';location.reload();break;
   case 'logout':S.user=null;save();go('account');toast('Çıkış yapıldı.');break;
   case 'editname':T.sheet='name';rerender();break;
   case 'invite':T.sheet='invite';rerender();break;
