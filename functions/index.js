@@ -202,7 +202,7 @@ function handler(env) {
   };
 }
 
-const OPTS = { region: REGION, maxInstances: 3, concurrency: 40, memory: "256MiB", timeoutSeconds: 30, invoker: "public" };
+const OPTS = { region: REGION, maxInstances: 3, concurrency: 40, memory: "256MiB", timeoutSeconds: 30, invoker: "private" };
 
 // Müşteri sunucusu: functions/.env IYZICO_BASE_URL'e göre sandbox ya da canlı.
 exports.api = onRequest(
