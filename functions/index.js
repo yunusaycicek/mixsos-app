@@ -65,10 +65,23 @@ async function iyzi(env, path, payload) {
   return r.json();
 }
 
+/** Ödeme sonucunu gösterip uygulamaya döner. Doğrudan yönlendirme yerine küçük bir sayfa: bazı Android
+ *  WebView'ları dış siteden uygulama adresine (https://localhost) 303 yönlendirmesinde takılabiliyor. */
 function backTo(res, ret, params) {
   const u = new URL(ret);
   for (const [k, v] of Object.entries(params)) if (v != null) u.searchParams.set(k, String(v));
-  res.redirect(303, u.toString());
+  const ok = params.pay === "success";
+  const href = JSON.stringify(u.toString()).replace(/</g, "\\u003c");
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  res.set("Cache-Control", "no-store").status(200).send(`<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>MIXSOS</title>
+<style>body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}
+.i{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;background:${ok ? "#1f9d55" : "#C8102E"}}
+a{display:block;background:#C8102E;color:#fff;text-decoration:none;padding:14px 28px;border-radius:26px;font-weight:600}</style></head>
+<body><div class="i">${ok ? "✓" : "!"}</div><h2 style="margin:0">${ok ? "Ödeme alındı" : "Ödeme tamamlanamadı"}</h2>
+<p style="margin:0;opacity:.8">${ok ? "Siparişin şubeye iletildi. Uygulamaya dönülüyor…" : esc(params.msg || "")}</p>
+<a id="b" href="#">Uygulamaya dön</a>
+<script>var h=${href};document.getElementById("b").href=h;setTimeout(function(){location.replace(h)},600);</script></body></html>`);
 }
 
 async function init(env, req, res, ip) {
@@ -160,6 +173,7 @@ async function callback(env, req, res, ip) {
     return backTo(res, ret, { pay: "success", kind: req.query.kind, pid: r.paymentId, amount: r.paidPrice, conv: r.conversationId });
   }
   logger.warn("ödeme başarısız", { code: r.errorCode, msg: r.errorMessage, status: r.paymentStatus });
+  if (r.basketId) await db.collection("orders").doc(String(r.basketId)).update({ status: "failed" }).catch(() => {});
   return backTo(res, ret, { pay: "fail", msg: r.errorMessage || "Ödeme tamamlanamadı" });
 }
 
@@ -194,6 +208,14 @@ function handler(env) {
       if (req.path === "/health") return res.json({ ok: true, mode: env.test ? "sandbox" : "live" });
       if (req.path === "/pay/init" && req.method === "POST") return await init(env, req, res, ip);
       if (req.path === "/pay/callback") return await callback(env, req, res, ip);
+      if (req.path === "/pay/status" && req.method === "GET") {
+        // Uygulama, ödeme dönüşü kaçarsa siparişi bu kimlikle sorgular (kimlik tahmin edilemez bir UUID).
+        const conv = String(req.query.conv || "");
+        if (!/^[0-9a-f-]{36}$/.test(conv)) return res.status(400).json({ error: "Geçersiz" });
+        const d = await db.collection("orders").doc(conv).get();
+        if (!d.exists) return res.json({ status: "unknown" });
+        return res.json({ status: d.get("status"), total: d.get("total"), paymentId: d.get("paymentId") || null, code: d.get("code") });
+      }
       return res.status(404).json({ error: "Bulunamadı" });
     } catch (e) {
       logger.error("sunucu hatası", e);

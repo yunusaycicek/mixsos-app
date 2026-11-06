@@ -817,9 +817,24 @@ async function startIyzico(kind,amount){
   const d=await r.json();
   if(!r.ok||!d.paymentPageUrl)throw new Error(d.error||'Ödeme başlatılamadı');
   if(kind!=='topup'&&Math.abs(d.total-totals().total)>0.01){unbusy();toast('Sepet tutarı güncellendi: '+tl(d.total),1)}
+  try{const pd=JSON.parse(localStorage.getItem('mixsos.pending')||'{}');pd.conv=d.conversationId;pd.api=payApi();localStorage.setItem('mixsos.pending',JSON.stringify(pd))}catch(e){}
   location.href=d.paymentPageUrl;
  }catch(e){unbusy();toast(e.message||'Bağlantı hatası. Tekrar dene.',1)}
 }
+// Ödeme dönüşü uygulamaya ulaşmazsa (WebView takılması, uygulama kapatılması) sipariş sunucudan sorgulanır.
+let pendingBusy=false;
+async function checkPending(){
+ if(pendingBusy)return;let pend=null;try{pend=JSON.parse(localStorage.getItem('mixsos.pending')||'null')}catch(e){}
+ if(!pend||!pend.conv||!pend.api||pend.kind==='topup')return;
+ if(Date.now()-(pend.at||0)>6*3600e3){try{localStorage.removeItem('mixsos.pending')}catch(e){}return}
+ pendingBusy=true;
+ try{const r=await fetch(pend.api+'/pay/status?conv='+encodeURIComponent(pend.conv),{cache:'no-store'});const d=await r.json();
+  if(d.status==='paid'){try{localStorage.removeItem('mixsos.pending')}catch(e){}
+   T.coupon=pend.coupon;T.note=pend.note||'';T.dineIn=!!pend.dine;T.pay={kind:'iyzico',paymentId:d.paymentId};placeOrder();toast('Ödeme alındı. Siparişin şubeye iletildi.')}
+  else if(d.status==='failed'||(d.status!=='pending'&&Date.now()-(pend.at||0)>30*60e3)){try{localStorage.removeItem('mixsos.pending')}catch(e){}}
+ }catch(e){}finally{pendingBusy=false}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkPending()});
 function handlePayReturn(){
  const q=new URLSearchParams(location.search);const st=q.get('pay');if(!st)return false;
  let pend=null;try{pend=JSON.parse(localStorage.getItem('mixsos.pending')||'null');localStorage.removeItem('mixsos.pending')}catch(e){}
@@ -934,7 +949,7 @@ function closeStory(){const s=$('.story');s&&s.remove();T.storyDone=true;if(T.ro
 function hashDoc(){const h=(location.hash||'').slice(1);return DOCS[h]||null}
 window.addEventListener('hashchange',()=>{const d=hashDoc();if(d)go('doc',{id:d})});
 render();
-(function boot(){if(handlePayReturn())return;const deep=hashDoc();if(deep){T.storyDone=true;go('doc',{id:deep});return}const L=$('#layer');
+(function boot(){if(handlePayReturn())return;setTimeout(checkPending,1500);const deep=hashDoc();if(deep){T.storyDone=true;go('doc',{id:deep});return}const L=$('#layer');
  L.insertAdjacentHTML('beforeend',`<div class="splash"><img class="bg" src="img/b/splash.jpg" alt=""><img class="lg" src="img/logo-white.png" alt="Mixsos"><span class="pw">Powered by <b>Lokus Studio</b></span></div>`);
  setTimeout(()=>{const s=$('.splash');s&&s.remove();
    L.insertAdjacentHTML('beforeend',`<div class="story"><div class="pb"><i></i></div><button class="x" data-a="storyx" aria-label="Kapat">${I.close(28)}</button><button data-a="story" style="flex:1;display:block" aria-label="Kampanyaya git"><img src="img/k5.jpg" alt="Kebabi, yeni ürün"></button><div class="go"><button class="btn btn-red" data-a="story">Hemen Dene</button></div></div>`);
