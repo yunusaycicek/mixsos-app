@@ -1,0 +1,26 @@
+# MIXSOS mobil uygulaması
+
+Mixsos (tavuk döner, dürüm, burger zinciri) için sipariş uygulaması. Yanıtları Türkçe ver.
+Uygulamada "Powered by Lokus Studio" yazısı kalmalı.
+
+## Yapı
+- `www/index.html` — uygulamanın tamamı (tek dosya, vanilla JS). Durum `localStorage` `mixsos.v2`.
+  Menü (`P`, `DRINK`, `SOS`), şubeler (`BR`), şirket bilgisi (`COMPANY`), yasal metinler (`V.doc`).
+  `ORDERS_OPEN=false`: online ödeme canlıya alınana kadar sepet "Şubeyi Ara" gösterir.
+- `shell/index.html` — Capacitor kabuğu; içeriği jsDelivr CDN'den (gh-pages) çeker. `www`'ye yapılan
+  değişiklik main'e push edilince uygulamaya mağaza güncellemesi olmadan gelir.
+- `functions/` — iyzico ödeme sunucusu (Firebase Cloud Functions, europe-west1). Henüz deploy edilmedi;
+  FIREBASE_SERVICE_ACCOUNT + IYZICO_API_KEY/SECRET_KEY secret'ları gerekiyor.
+- `store/` — App Store metinleri/ekran görüntüleri (`metadata`, `screenshots`), Google Play görselleri (`play`).
+- `ci/` — ikon/açılış (`brand.py`, `brand_ios.py`), Play Gradle ayarları (`play_gradle.py`), Android yükleme anahtarı (`upload.p12`).
+
+## Yayın akışları (GitHub Actions)
+- `build.yml` — her push: gh-pages'e yayın (app.mixsos.com). Commit mesajında `[apk]` → test APK.
+- `ios.yml` — `[ios]` → App Store Connect'e build; `[ios] [meta]` → yalnızca ekran görüntüsü/metin.
+  Bundle `com.restajet.mixsosdoner`, Team 65QNGMU6MN. App Store'da 2.0.0 yayında.
+- `play.yml` — `[play]` ya da elle → imzalı `Mixsos.aab` (sürüm `play` release'inde).
+  Paket `com.mixsos.app`, targetSdk 36, minSdk 24. Play Console'da dahili test yayında; ilk AAB elle yüklendi.
+
+## Kurallar
+- Secret'lar (API anahtarı, .p8, şifre) asla sohbete yazılmaz; kullanıcı GitHub secrets'a kendisi girer.
+- Demo giriş: herhangi 5xx numara + kod 123456. iyzico sandbox test kartı 5528 7900 0000 0008, 12/30, 123, 3D 283126.
