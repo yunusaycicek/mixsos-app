@@ -73,11 +73,9 @@ jobs:
           sleep 10; curl -fsS "$URL/health" || true
           # Botun eklendiği Telegram gruplarını listele (sohbet kimliklerini functions/.env'e yazmak için)
           if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
-            curl -fsS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates?allowed_updates=%5B%22message%22%2C%22my_chat_member%22%5D" | python3 -c "import sys,json;seen=set()
-          for u in json.load(sys.stdin).get('result',[]):
-            for k in ('message','my_chat_member','channel_post'):
-              c=(u.get(k) or {}).get('chat')
-              if c and c['id'] not in seen: seen.add(c['id']); print('::notice::Telegram sohbeti: %s → %s' % (c.get('title') or c.get('first_name'), c['id']))" || true
+            curl -sS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates" > "$RUNNER_TEMP/tg.json" || true
+            python3 ci/tg_chats.py "$RUNNER_TEMP/tg.json" || true
+            rm -f "$RUNNER_TEMP/tg.json"
           fi
 
   site:
