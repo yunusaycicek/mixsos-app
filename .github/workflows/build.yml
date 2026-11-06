@@ -48,6 +48,8 @@ jobs:
           IYZICO_API_KEY: ${{ secrets.IYZICO_API_KEY }}
           IYZICO_SECRET_KEY: ${{ secrets.IYZICO_SECRET_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          IYZICO_SANDBOX_API_KEY: ${{ secrets.IYZICO_SANDBOX_API_KEY }}
+          IYZICO_SANDBOX_SECRET_KEY: ${{ secrets.IYZICO_SANDBOX_SECRET_KEY }}
         run: |
           if [ "$HAS_PAY" != "true" ]; then
             echo "iyzico secret'ları eksik, demo ödeme modunda kalınıyor."; exit 0
@@ -59,13 +61,21 @@ jobs:
           FB="npx --yes firebase-tools@14"
           printf '%s' "$IYZICO_API_KEY" > "$RUNNER_TEMP/k1"; printf '%s' "$IYZICO_SECRET_KEY" > "$RUNNER_TEMP/k2"; printf '%s' "${TELEGRAM_BOT_TOKEN:-none}" > "$RUNNER_TEMP/k3"
           $FB functions:secrets:set TELEGRAM_BOT_TOKEN --data-file "$RUNNER_TEMP/k3" --project "$PROJECT" --non-interactive --force
+          # Test sunucusu (apitest) sandbox anahtarları; tanımlı değilse ve canlı sunucu hâlâ sandbox'taysa aynı anahtarlar kullanılır.
+          SBK="$IYZICO_SANDBOX_API_KEY"; SBS="$IYZICO_SANDBOX_SECRET_KEY"
+          if [ -z "$SBK" ] && grep -q sandbox functions/.env; then SBK="$IYZICO_API_KEY"; SBS="$IYZICO_SECRET_KEY"; fi
+          if [ -z "$SBK" ]; then echo "::error::Canlı modda IYZICO_SANDBOX_API_KEY / IYZICO_SANDBOX_SECRET_KEY secret'ları gerekli"; exit 1; fi
+          printf '%s' "$SBK" > "$RUNNER_TEMP/k4"; printf '%s' "$SBS" > "$RUNNER_TEMP/k5"
+          $FB functions:secrets:set IYZICO_SANDBOX_API_KEY --data-file "$RUNNER_TEMP/k4" --project "$PROJECT" --non-interactive --force
+          $FB functions:secrets:set IYZICO_SANDBOX_SECRET_KEY --data-file "$RUNNER_TEMP/k5" --project "$PROJECT" --non-interactive --force
+          rm -f "$RUNNER_TEMP/k4" "$RUNNER_TEMP/k5"
           $FB functions:secrets:set IYZICO_API_KEY --data-file "$RUNNER_TEMP/k1" --project "$PROJECT" --non-interactive --force
           $FB functions:secrets:set IYZICO_SECRET_KEY --data-file "$RUNNER_TEMP/k2" --project "$PROJECT" --non-interactive --force
           rm -f "$RUNNER_TEMP/k1" "$RUNNER_TEMP/k2" "$RUNNER_TEMP/k3"
           $FB deploy --only functions --project "$PROJECT" --non-interactive --force || { sleep 60; $FB deploy --only functions --project "$PROJECT" --non-interactive --force; }
           # Kuruluş politikası "allUsers" yetkisini engelliyor; herkese açık erişim için Cloud Run'da
           # invoker IAM kontrolünü kapatıyoruz (güvenlik uygulama içinde: fiyat sunucuda, ödeme iyzico'dan doğrulanıyor).
-          gcloud run services update api --region=europe-west1 --project "$PROJECT" --no-invoker-iam-check --quiet
+          for svc in api apitest; do gcloud run services update $svc --region=europe-west1 --project "$PROJECT" --no-invoker-iam-check --quiet; done
           URL="https://europe-west1-$PROJECT.cloudfunctions.net/api"
           MODE=$(grep -q sandbox functions/.env && echo sandbox || echo live)
           echo "url=$URL" >> "$GITHUB_OUTPUT"; echo "mode=$MODE" >> "$GITHUB_OUTPUT"

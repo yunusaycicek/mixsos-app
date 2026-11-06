@@ -435,6 +435,9 @@ const LIVE_PAY=/^https:\/\//.test(PAY_API);
 // test numarasıyla (5000000000) giriş yapan kullanıcıya açıktır; diğerleri "Şubeyi Ara" görür.
 const TEST_PHONE='5000000000';
 let ORDERS_OPEN=false;
+// Test numarası her zaman kalıcı test sunucusuna (apitest, iyzico sandbox) gider; canlıda da gerçek para çekilmez.
+function isTester(){return !!(S&&S.user&&S.user.phone===TEST_PHONE)}
+function payApi(){return isTester()?PAY_API.replace(/\/api$/,'/apitest'):PAY_API}
 function ordersOpen(){const b=typeof branch==='function'?branch():null;return ORDERS_OPEN=!!(b&&b.online)&&LIVE_PAY&&(PAY_MODE==='live'||!!(S&&S.user&&S.user.phone===TEST_PHONE))}
 // Cüzdan bakiyesi şimdilik cihazda tutulduğu için para yükleme sunucu tarafı hazır olana kadar kapalı.
 const TOPUP_OPEN=false;
@@ -591,7 +594,7 @@ V.checkout=()=>{const t=totals();const b=branch();const card=LIVE_PAY?null:S.car
  const camps=[['elit',COUPONS.elit.title]];if(free)camps.unshift(['free','Hediye Döner (damga kartından)']);
  const pm=T.payWith==='wallet'?`<div class="row" style="margin:10px 0 0;width:100%;border:1.5px solid var(--line)">${I.wallet(22)}<span class="l">Mixsos Cüzdan<br><small class="muted num">Bakiye: ${tl(S.wallet.bal+S.wallet.bonus)}</small></span></div>`
   :card&&T.payWith==='saved'?`<div class="row" style="margin:10px 0 0;width:100%;border:1.5px solid var(--line)">${I.card(22)}<span class="l">${esc(card.name)}<br><small class="muted num">${esc(card.mask)}</small></span></div><p class="label" style="margin-top:6px">Ödeme seçilen karttan tahsil edilecektir.</p>`
-  :`<p class="label" style="margin-top:8px">${LIVE_PAY?'Ödeme Yap’a bastığında iyzico’nun güvenli ödeme sayfası açılır; kart bilgilerin Mixsos’a iletilmez.':'Ödeme Yap’a bastığında kart bilgilerini gireceksin.'}</p>${LIVE_PAY&&PAY_MODE!=='live'?`<div class="note" style="margin-top:10px"><b>Test ortamı (iyzico sandbox).</b> Gerçek para çekilmez. Test kartı: <span class="num">5528 7900 0000 0008</span> · SKT <span class="num">12/30</span> · CVC <span class="num">123</span> · 3D şifresi <span class="num">283126</span></div>`:''}`;
+  :`<p class="label" style="margin-top:8px">${LIVE_PAY?'Ödeme Yap’a bastığında iyzico’nun güvenli ödeme sayfası açılır; kart bilgilerin Mixsos’a iletilmez.':'Ödeme Yap’a bastığında kart bilgilerini gireceksin.'}</p>${LIVE_PAY&&(PAY_MODE!=='live'||isTester())?`<div class="note" style="margin-top:10px"><b>Test ortamı (iyzico sandbox).</b> Gerçek para çekilmez. Test kartı: <span class="num">5528 7900 0000 0008</span> · SKT <span class="num">12/30</span> · CVC <span class="num">123</span> · 3D şifresi <span class="num">283126</span></div>`:''}`;
  return `${hdr('Ödeme')}
  <div class="row" style="margin:0;border-radius:0;width:100%">${I.bag(20)}<span class="l" style="font-weight:600">${esc(S.mode==='adres'&&S.address?'Adrese Teslim · '+S.address.mah:b.name)}</span></div>
  ${S.mode==='gelal'?`<div class="card" style="display:flex;align-items:center;gap:12px"><div style="flex:1"><b style="font-weight:600;font-size:15px">Servis</b><p class="label" style="margin-top:2px">Siparişimi şubede yemek istiyorum.</p></div><button class="toggle ${T.dineIn?'on':''}" data-a="dine" aria-label="Şubede ye"></button></div>`:''}
@@ -810,7 +813,7 @@ async function startIyzico(kind,amount){
  try{localStorage.setItem('mixsos.pending',JSON.stringify({kind,amount,coupon:T.coupon,note:T.note,dine:T.dineIn,at:Date.now()}))}catch(e){}
  busy('iyzico güvenli ödeme sayfası açılıyor…');
  try{
-  const r=await fetch(PAY_API+'/pay/init',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch(payApi()+'/pay/init',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(!r.ok||!d.paymentPageUrl)throw new Error(d.error||'Ödeme başlatılamadı');
   if(kind!=='topup'&&Math.abs(d.total-totals().total)>0.01){unbusy();toast('Sepet tutarı güncellendi: '+tl(d.total),1)}

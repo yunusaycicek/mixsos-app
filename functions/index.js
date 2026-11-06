@@ -28,6 +28,9 @@ const db = getFirestore();
 
 const IYZICO_API_KEY = defineSecret("IYZICO_API_KEY");
 const IYZICO_SECRET_KEY = defineSecret("IYZICO_SECRET_KEY");
+// Kalıcı test ortamı (apitest): her zaman iyzico sandbox'a bağlanır.
+const IYZICO_SANDBOX_API_KEY = defineSecret("IYZICO_SANDBOX_API_KEY");
+const IYZICO_SANDBOX_SECRET_KEY = defineSecret("IYZICO_SANDBOX_SECRET_KEY");
 const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 // Şube → Telegram sohbet kimliği. functions/.env: TELEGRAM_CHATS={"kadikoy":"-100...","kocaeli":"-100..."}
 const CHATS = (() => { try { return JSON.parse(process.env.TELEGRAM_CHATS || "{}"); } catch { return {}; } })();
@@ -51,14 +54,14 @@ function cors(req, res) {
   }
 }
 
-function selfUrl() {
-  return `https://${REGION}-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/api`;
+function selfUrl(env) {
+  return `https://${REGION}-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/${env.name}`;
 }
 
-async function iyzi(path, payload) {
+async function iyzi(env, path, payload) {
   const body = JSON.stringify(payload);
-  const headers = iyziHeaders(IYZICO_API_KEY.value(), IYZICO_SECRET_KEY.value(), path, body);
-  const r = await fetch(BASE_URL + path, { method: "POST", headers, body, signal: AbortSignal.timeout(20_000) });
+  const headers = iyziHeaders(env.key(), env.secret(), path, body);
+  const r = await fetch(env.base + path, { method: "POST", headers, body, signal: AbortSignal.timeout(20_000) });
   return r.json();
 }
 
@@ -68,7 +71,7 @@ function backTo(res, ret, params) {
   res.redirect(303, u.toString());
 }
 
-async function init(req, res, ip) {
+async function init(env, req, res, ip) {
   if (!limitInit(ip)) return res.status(429).json({ error: "Çok fazla deneme. Bir dakika sonra tekrar dene." });
   const input = req.body && typeof req.body === "object" ? req.body : {};
   const ret = String(input.ret || "");
@@ -97,7 +100,7 @@ async function init(req, res, ip) {
   const surname = (parts.slice(1).join(" ") || "Müşteri").slice(0, 50);
   const phone = String(b.phone || "").replace(/\D/g, "").slice(-10);
   const addr = { contactName: `${name} ${surname}`, city: "Istanbul", country: "Turkey", address: String(input.address || "Mixsos şubesinden teslim").slice(0, 200) };
-  const cb = new URL(selfUrl() + "/pay/callback");
+  const cb = new URL(selfUrl(env) + "/pay/callback");
   cb.searchParams.set("ret", ret);
   cb.searchParams.set("kind", input.kind === "topup" ? "topup" : "order");
 
@@ -123,14 +126,14 @@ async function init(req, res, ip) {
     billingAddress: addr,
     basketItems: basketItems(priced.lines, priced.total),
   };
-  const r = await iyzi("/payment/iyzipos/checkoutform/initialize/auth/ecom", payload);
+  const r = await iyzi(env, "/payment/iyzipos/checkoutform/initialize/auth/ecom", payload);
   if (r.status !== "success") {
     logger.warn("iyzico init hata", { code: r.errorCode, msg: r.errorMessage });
     return res.status(502).json({ error: r.errorMessage || "Ödeme başlatılamadı" });
   }
   if (input.kind !== "topup") {
     await db.collection("orders").doc(conv).set({
-      status: "pending", test: SANDBOX, code: conv.slice(0, 6).toUpperCase(),
+      status: "pending", test: env.test, code: conv.slice(0, 6).toUpperCase(),
       branch, branchName: BRANCHES[branch],
       lines: priced.lines.map((l) => ({ name: l.name, qty: l.qty, opts: l.opts || [], total: r2(l.total) })),
       discount: priced.discount || 0, total: priced.total,
@@ -144,13 +147,13 @@ async function init(req, res, ip) {
   return res.json({ paymentPageUrl: r.paymentPageUrl, conversationId: conv, total: priced.total });
 }
 
-async function callback(req, res, ip) {
+async function callback(env, req, res, ip) {
   const ret = String(req.query.ret || "");
   if (!RETURN_OK.some((r) => r.test(ret))) return res.status(400).send("Geçersiz dönüş adresi");
   if (!limitCallback(ip)) return backTo(res, ret, { pay: "fail", msg: "Çok fazla deneme" });
   const token = (req.body && req.body.token) || req.query.token;
   if (!token) return backTo(res, ret, { pay: "fail", msg: "Ödeme bilgisi alınamadı" });
-  const r = await iyzi("/payment/iyzipos/checkoutform/auth/ecom/detail", { locale: "tr", token: String(token) });
+  const r = await iyzi(env, "/payment/iyzipos/checkoutform/auth/ecom/detail", { locale: "tr", token: String(token) });
   if (r.status === "success" && r.paymentStatus === "SUCCESS") {
     logger.info("ödeme başarılı", { paymentId: r.paymentId, paidPrice: r.paidPrice, conv: r.conversationId });
     if (req.query.kind !== "topup") await notifyBranch(r.basketId || r.conversationId, r.paymentId).catch((e) => logger.error("bildirim hatası", e));
@@ -182,20 +185,33 @@ async function notifyBranch(conv, paymentId) {
   await ref.update({ notified: true });
 }
 
-exports.api = onRequest(
-  { region: REGION, secrets: [IYZICO_API_KEY, IYZICO_SECRET_KEY, TELEGRAM_BOT_TOKEN], maxInstances: 3, concurrency: 40, memory: "256MiB", timeoutSeconds: 30, invoker: "public" },
-  async (req, res) => {
+function handler(env) {
+  return async (req, res) => {
     cors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
     const ip = String(req.get("x-forwarded-for") || req.ip || "0.0.0.0").split(",")[0].trim();
     try {
-      if (req.path === "/health") return res.json({ ok: true, mode: BASE_URL.includes("sandbox") ? "sandbox" : "live" });
-      if (req.path === "/pay/init" && req.method === "POST") return await init(req, res, ip);
-      if (req.path === "/pay/callback") return await callback(req, res, ip);
+      if (req.path === "/health") return res.json({ ok: true, mode: env.test ? "sandbox" : "live" });
+      if (req.path === "/pay/init" && req.method === "POST") return await init(env, req, res, ip);
+      if (req.path === "/pay/callback") return await callback(env, req, res, ip);
       return res.status(404).json({ error: "Bulunamadı" });
     } catch (e) {
       logger.error("sunucu hatası", e);
       return res.status(500).json({ error: "Sunucu hatası. Tekrar dene." });
     }
-  }
+  };
+}
+
+const OPTS = { region: REGION, maxInstances: 3, concurrency: 40, memory: "256MiB", timeoutSeconds: 30, invoker: "public" };
+
+// Müşteri sunucusu: functions/.env IYZICO_BASE_URL'e göre sandbox ya da canlı.
+exports.api = onRequest(
+  { ...OPTS, secrets: [IYZICO_API_KEY, IYZICO_SECRET_KEY, TELEGRAM_BOT_TOKEN] },
+  handler({ name: "api", base: BASE_URL, test: SANDBOX, key: () => IYZICO_API_KEY.value(), secret: () => IYZICO_SECRET_KEY.value() })
+);
+
+// Test sunucusu: her zaman sandbox. Uygulama, test numarasıyla (5000000000) giriş yapan kullanıcıyı buraya yönlendirir.
+exports.apitest = onRequest(
+  { ...OPTS, maxInstances: 1, secrets: [IYZICO_SANDBOX_API_KEY, IYZICO_SANDBOX_SECRET_KEY, TELEGRAM_BOT_TOKEN] },
+  handler({ name: "apitest", base: "https://sandbox-api.iyzipay.com", test: true, key: () => IYZICO_SANDBOX_API_KEY.value(), secret: () => IYZICO_SANDBOX_SECRET_KEY.value() })
 );
