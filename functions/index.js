@@ -19,15 +19,25 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const MENU = require("./menu.json");
-const { priceCart, basketItems, iyziHeaders, rateLimiter, money, r2 } = require("./core");
+const { priceCart, basketItems, iyziHeaders, rateLimiter, money, r2, orderMessage } = require("./core");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+
+initializeApp();
+const db = getFirestore();
 
 const IYZICO_API_KEY = defineSecret("IYZICO_API_KEY");
 const IYZICO_SECRET_KEY = defineSecret("IYZICO_SECRET_KEY");
+const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
+// Şube → Telegram sohbet kimliği. functions/.env: TELEGRAM_CHATS={"kadikoy":"-100...","kocaeli":"-100..."}
+const CHATS = (() => { try { return JSON.parse(process.env.TELEGRAM_CHATS || "{}"); } catch { return {}; } })();
+const BRANCHES = { kadikoy: "Kadıköy Şubesi", kocaeli: "Körfez Şubesi" };
+const SANDBOX = (process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com").includes("sandbox");
 const REGION = "europe-west1";
 const BASE_URL = process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com";
 
-const RETURN_OK = [/^https:\/\/localhost(\/|$)/, /^https:\/\/app\.mixsos\.com(\/|$)/, /^http:\/\/localhost(:\d+)?(\/|$)/, /^https:\/\/yunusaycicek\.github\.io(\/|$)/];
-const CORS_OK = [/^https:\/\/localhost$/, /^https:\/\/app\.mixsos\.com$/, /^http:\/\/localhost(:\d+)?$/, /^https:\/\/yunusaycicek\.github\.io$/];
+const RETURN_OK = [/^capacitor:\/\/localhost(\/|$)/, /^https:\/\/localhost(\/|$)/, /^https:\/\/app\.mixsos\.com(\/|$)/, /^http:\/\/localhost(:\d+)?(\/|$)/, /^https:\/\/yunusaycicek\.github\.io(\/|$)/];
+const CORS_OK = [/^capacitor:\/\/localhost$/, /^https:\/\/localhost$/, /^https:\/\/app\.mixsos\.com$/, /^http:\/\/localhost(:\d+)?$/, /^https:\/\/yunusaycicek\.github\.io$/];
 const limitInit = rateLimiter(10, 60_000);
 const limitCallback = rateLimiter(30, 60_000);
 
@@ -114,6 +124,19 @@ async function init(req, res, ip) {
     logger.warn("iyzico init hata", { code: r.errorCode, msg: r.errorMessage });
     return res.status(502).json({ error: r.errorMessage || "Ödeme başlatılamadı" });
   }
+  if (input.kind !== "topup") {
+    const branch = BRANCHES[input.branch] ? input.branch : "kadikoy";
+    await db.collection("orders").doc(conv).set({
+      status: "pending", test: SANDBOX, code: conv.slice(0, 6).toUpperCase(),
+      branch, branchName: BRANCHES[branch],
+      lines: priced.lines.map((l) => ({ name: l.name, qty: l.qty, opts: l.opts || [], total: r2(l.total) })),
+      discount: priced.discount || 0, total: priced.total,
+      buyerName: `${name} ${surname}`.trim(), buyerPhone: phone,
+      mode: input.mode === "adres" ? "adres" : "gelal", dine: !!input.dine,
+      address: addr.address, note: String(input.note || "").slice(0, 200),
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  }
   logger.info("ödeme başlatıldı", { conv, total: priced.total, kind: input.kind || "order" });
   return res.json({ paymentPageUrl: r.paymentPageUrl, conversationId: conv, total: priced.total });
 }
@@ -127,14 +150,37 @@ async function callback(req, res, ip) {
   const r = await iyzi("/payment/iyzipos/checkoutform/auth/ecom/detail", { locale: "tr", token: String(token) });
   if (r.status === "success" && r.paymentStatus === "SUCCESS") {
     logger.info("ödeme başarılı", { paymentId: r.paymentId, paidPrice: r.paidPrice, conv: r.conversationId });
+    if (req.query.kind !== "topup") await notifyBranch(r.basketId || r.conversationId, r.paymentId).catch((e) => logger.error("bildirim hatası", e));
     return backTo(res, ret, { pay: "success", kind: req.query.kind, pid: r.paymentId, amount: r.paidPrice, conv: r.conversationId });
   }
   logger.warn("ödeme başarısız", { code: r.errorCode, msg: r.errorMessage, status: r.paymentStatus });
   return backTo(res, ret, { pay: "fail", msg: r.errorMessage || "Ödeme tamamlanamadı" });
 }
 
+/** Ödenen siparişi bir kez "paid" yapar ve şubenin Telegram grubuna gönderir. */
+async function notifyBranch(conv, paymentId) {
+  if (!conv) return;
+  const ref = db.collection("orders").doc(String(conv));
+  const order = await db.runTransaction(async (t) => {
+    const s = await t.get(ref);
+    if (!s.exists || s.get("status") !== "pending") return null;
+    t.update(ref, { status: "paid", paymentId: String(paymentId || ""), paidAt: FieldValue.serverTimestamp() });
+    return s.data();
+  });
+  if (!order) return;
+  const token = TELEGRAM_BOT_TOKEN.value();
+  const chat = CHATS[order.branch] || CHATS.default;
+  if (!token || token === "none" || !chat) return logger.warn("Telegram ayarlı değil", { branch: order.branch });
+  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(10_000),
+    body: JSON.stringify({ chat_id: chat, parse_mode: "HTML", text: orderMessage(order, money) }),
+  });
+  if (!r.ok) throw new Error("Telegram " + r.status + " " + (await r.text()).slice(0, 200));
+  await ref.update({ notified: true });
+}
+
 exports.api = onRequest(
-  { region: REGION, secrets: [IYZICO_API_KEY, IYZICO_SECRET_KEY], maxInstances: 3, concurrency: 40, memory: "256MiB", timeoutSeconds: 30, invoker: "public" },
+  { region: REGION, secrets: [IYZICO_API_KEY, IYZICO_SECRET_KEY, TELEGRAM_BOT_TOKEN], maxInstances: 3, concurrency: 40, memory: "256MiB", timeoutSeconds: 30, invoker: "public" },
   async (req, res) => {
     cors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");

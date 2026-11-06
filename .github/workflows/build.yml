@@ -38,6 +38,7 @@ jobs:
           SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           IYZICO_API_KEY: ${{ secrets.IYZICO_API_KEY }}
           IYZICO_SECRET_KEY: ${{ secrets.IYZICO_SECRET_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
           if [ -z "$SA" ] || [ -z "$IYZICO_API_KEY" ] || [ -z "$IYZICO_SECRET_KEY" ]; then
             echo "Ödeme secret'ları eksik, demo ödeme modunda kalınıyor."; exit 0
@@ -47,11 +48,12 @@ jobs:
           PROJECT=$(node -e "console.log(require(process.env.GOOGLE_APPLICATION_CREDENTIALS).project_id)")
           node ci/menu.mjs
           (cd functions && npm install --omit=dev --no-audit --no-fund)
-          FB="npx --yes firebase-tools@13"
-          printf '%s' "$IYZICO_API_KEY" > "$RUNNER_TEMP/k1"; printf '%s' "$IYZICO_SECRET_KEY" > "$RUNNER_TEMP/k2"
+          FB="npx --yes firebase-tools@14"
+          printf '%s' "$IYZICO_API_KEY" > "$RUNNER_TEMP/k1"; printf '%s' "$IYZICO_SECRET_KEY" > "$RUNNER_TEMP/k2"; printf '%s' "${TELEGRAM_BOT_TOKEN:-none}" > "$RUNNER_TEMP/k3"
+          $FB functions:secrets:set TELEGRAM_BOT_TOKEN --data-file "$RUNNER_TEMP/k3" --project "$PROJECT" --non-interactive --force
           $FB functions:secrets:set IYZICO_API_KEY --data-file "$RUNNER_TEMP/k1" --project "$PROJECT" --non-interactive --force
           $FB functions:secrets:set IYZICO_SECRET_KEY --data-file "$RUNNER_TEMP/k2" --project "$PROJECT" --non-interactive --force
-          rm -f "$RUNNER_TEMP/k1" "$RUNNER_TEMP/k2"
+          rm -f "$RUNNER_TEMP/k1" "$RUNNER_TEMP/k2" "$RUNNER_TEMP/k3"
           $FB deploy --only functions --project "$PROJECT" --non-interactive --force || { sleep 60; $FB deploy --only functions --project "$PROJECT" --non-interactive --force; }
           rm -f "$RUNNER_TEMP/sa.json"
           URL="https://europe-west1-$PROJECT.cloudfunctions.net/api"
@@ -59,6 +61,14 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"; echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "Ödeme sunucusu: $URL ($MODE)"
           sleep 10; curl -fsS "$URL/health" || true
+          # Botun eklendiği Telegram gruplarını listele (sohbet kimliklerini functions/.env'e yazmak için)
+          if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
+            curl -fsS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates" | python3 -c "import sys,json;seen=set()
+          for u in json.load(sys.stdin).get('result',[]):
+            for k in ('message','my_chat_member','channel_post'):
+              c=(u.get(k) or {}).get('chat')
+              if c and c['id'] not in seen: seen.add(c['id']); print('::notice::Telegram sohbeti: %s → %s' % (c.get('title') or c.get('first_name'), c['id']))" || true
+          fi
 
   site:
     needs: pay

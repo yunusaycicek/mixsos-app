@@ -18,6 +18,7 @@ function priceCart(input, menu) {
     if (!p) throw new Error("Ürün bulunamadı");
     const qty = Math.max(1, Math.min(50, parseInt(it.qty, 10) || 1));
     let unit = p.price;
+    const labels = [];
     const sel = it.sel && typeof it.sel === "object" ? it.sel : {};
     for (const g of p.groups) {
       const picked = Array.isArray(sel[g.id]) ? [...new Set(sel[g.id].map(Number))] : [];
@@ -26,12 +27,13 @@ function priceCart(input, menu) {
       for (const i of picked) {
         if (!g.opts[i]) throw new Error("Geçersiz seçenek");
         unit += g.opts[i][1];
+        labels.push(g.opts[i][0]);
       }
     }
-    lines.push({ id: it.pid, name: p.name, total: unit * qty, doner: p.doner, base: p.price });
+    lines.push({ id: it.pid, name: p.name, qty, opts: labels, total: unit * qty, doner: p.doner, base: p.price });
   }
   const poset = Math.max(0, Math.min(20, parseInt(input.poset, 10) || 0));
-  if (poset) lines.push({ id: "poset", name: "Poşet", total: poset * menu.poset });
+  if (poset) lines.push({ id: "poset", name: "Poşet", qty: poset, opts: [], total: poset * menu.poset });
   const productsTotal = lines.filter((l) => l.id !== "poset").reduce((a, l) => a + l.total, 0);
   let discount = 0;
   const c = input.coupon && menu.coupons[input.coupon];
@@ -81,4 +83,24 @@ function rateLimiter(limit, windowMs) {
   };
 }
 
-module.exports = { priceCart, basketItems, iyziHeaders, rateLimiter, money, r2 };
+/** Şubeye gidecek Telegram mesajı (HTML). */
+function orderMessage(o, money2) {
+  const esc = (t) => String(t == null ? "" : t).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  const lines = o.lines.map((l) => `• ${l.qty} × ${esc(l.name)}${l.opts && l.opts.length ? `\n   <i>${esc(l.opts.join(", "))}</i>` : ""}  —  ${money2(l.total)} TL`);
+  const how = o.mode === "adres" ? `🛵 <b>Adrese teslim</b>\n${esc(o.address)}` : o.dine ? "🍽 <b>Şubede yiyecek</b>" : "🛍 <b>Gel-al</b>";
+  return [
+    o.test ? "🧪 <b>TEST SİPARİŞİ — hazırlamayın</b>" : null,
+    `🔔 <b>YENİ SİPARİŞ</b> #${esc(o.code)}`,
+    `${esc(o.branchName || o.branch)}`,
+    "",
+    lines.join("\n"),
+    o.discount ? `İndirim: −${money2(o.discount)} TL` : null,
+    `<b>Toplam: ${money2(o.total)} TL</b> (iyzico ile ödendi)`,
+    "",
+    how,
+    `👤 ${esc(o.buyerName)}  📞 ${esc(o.buyerPhone ? "0" + o.buyerPhone : "-")}`,
+    o.note ? `📝 Not: ${esc(o.note)}` : null,
+  ].filter((x) => x !== null).join("\n");
+}
+
+module.exports = { orderMessage, priceCart, basketItems, iyziHeaders, rateLimiter, money, r2 };
