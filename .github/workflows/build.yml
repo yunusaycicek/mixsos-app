@@ -24,6 +24,8 @@ jobs:
   #    secret'ları tanımlı değilse atlanır; uygulama demo (sahte) ödemeyle çalışmaya devam eder.
   pay:
     runs-on: ubuntu-latest
+    env:
+      HAS_PAY: ${{ secrets.IYZICO_API_KEY != '' && secrets.IYZICO_SECRET_KEY != '' }}
     outputs:
       url: ${{ steps.deploy.outputs.url }}
       mode: ${{ steps.deploy.outputs.mode }}
@@ -32,20 +34,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      # Anahtarsız giriş (Workload Identity Federation): kuruluş politikası JSON anahtarı yasaklıyor.
+      - name: Google Cloud'a giriş
+        id: gauth
+        if: ${{ env.HAS_PAY == 'true' }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/507231348158/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-deploy@mixsos--web-site.iam.gserviceaccount.com
       - name: Firebase'e yükle
         id: deploy
         env:
-          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           IYZICO_API_KEY: ${{ secrets.IYZICO_API_KEY }}
           IYZICO_SECRET_KEY: ${{ secrets.IYZICO_SECRET_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
-          if [ -z "$SA" ] || [ -z "$IYZICO_API_KEY" ] || [ -z "$IYZICO_SECRET_KEY" ]; then
-            echo "Ödeme secret'ları eksik, demo ödeme modunda kalınıyor."; exit 0
+          if [ "$HAS_PAY" != "true" ]; then
+            echo "iyzico secret'ları eksik, demo ödeme modunda kalınıyor."; exit 0
           fi
-          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          PROJECT=$(node -e "console.log(require(process.env.GOOGLE_APPLICATION_CREDENTIALS).project_id)")
+          PROJECT=mixsos--web-site
           node ci/menu.mjs
           (cd functions && npm install --omit=dev --no-audit --no-fund)
           FB="npx --yes firebase-tools@14"
@@ -55,7 +62,6 @@ jobs:
           $FB functions:secrets:set IYZICO_SECRET_KEY --data-file "$RUNNER_TEMP/k2" --project "$PROJECT" --non-interactive --force
           rm -f "$RUNNER_TEMP/k1" "$RUNNER_TEMP/k2" "$RUNNER_TEMP/k3"
           $FB deploy --only functions --project "$PROJECT" --non-interactive --force || { sleep 60; $FB deploy --only functions --project "$PROJECT" --non-interactive --force; }
-          rm -f "$RUNNER_TEMP/sa.json"
           URL="https://europe-west1-$PROJECT.cloudfunctions.net/api"
           MODE=$(grep -q sandbox functions/.env && echo sandbox || echo live)
           echo "url=$URL" >> "$GITHUB_OUTPUT"; echo "mode=$MODE" >> "$GITHUB_OUTPUT"
