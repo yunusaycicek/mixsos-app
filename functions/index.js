@@ -85,6 +85,10 @@ async function init(req, res, ip) {
     return res.status(400).json({ error: e.message });
   }
   if (priced.total <= 0) return res.status(400).json({ error: "Tutar sıfır olamaz" });
+  const branch = String(input.branch || "");
+  // Yalnızca Telegram grubu tanımlı şubeler online sipariş alır (aksi halde ödeme alınır ama şube görmez).
+  if (input.kind !== "topup" && (!BRANCHES[branch] || !CHATS[branch]))
+    return res.status(400).json({ error: "Bu şube henüz online sipariş almıyor. Lütfen şubeyi arayın." });
 
   const conv = require("node:crypto").randomUUID();
   const b = input.buyer && typeof input.buyer === "object" ? input.buyer : {};
@@ -125,7 +129,6 @@ async function init(req, res, ip) {
     return res.status(502).json({ error: r.errorMessage || "Ödeme başlatılamadı" });
   }
   if (input.kind !== "topup") {
-    const branch = BRANCHES[input.branch] ? input.branch : "kadikoy";
     await db.collection("orders").doc(conv).set({
       status: "pending", test: SANDBOX, code: conv.slice(0, 6).toUpperCase(),
       branch, branchName: BRANCHES[branch],

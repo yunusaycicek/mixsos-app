@@ -424,7 +424,7 @@ const COUPONS={elit:{title:'Elit Üyelere Özel %10 İndirim',pct:10}};
 const CODES={MIXSOS10:'elit'};
 const BR=[
  {id:'kadikoy',il:'İstanbul',ilce:'Kadıköy',name:'Kadıköy Şubesi',addr:'Osmanağa, Halitağa Cd. No:7c, 34734 Kadıköy / İstanbul',tel:'0531 483 58 48',hours:'10:30 - 02:00',open:[10.5,26],x:62,y:44},
- {id:'kocaeli',il:'Kocaeli',ilce:'Körfez',name:'Körfez Şubesi',addr:'Güney Mah. Tuğrul Caddesi No:6 Körfez / Kocaeli',tel:'0262 526 99 99',hours:'10:30 - 02:00',open:[10.5,26],x:30,y:62}
+ {id:'kocaeli',il:'Kocaeli',ilce:'Körfez',name:'Körfez Şubesi',addr:'Güney Mah. Tuğrul Caddesi No:6 Körfez / Kocaeli',tel:'0262 526 99 99',hours:'10:30 - 02:00',open:[10.5,26],x:30,y:62,online:true}
 ];
 const POSET_PRICE=1;
 // iyzico ödeme sunucusu: yayın sırasında GitHub Actions bu iki değeri doldurur. Boşsa uygulama demo (sahte) ödemeyle çalışır.
@@ -435,7 +435,7 @@ const LIVE_PAY=/^https:\/\//.test(PAY_API);
 // test numarasıyla (5000000000) giriş yapan kullanıcıya açıktır; diğerleri "Şubeyi Ara" görür.
 const TEST_PHONE='5000000000';
 let ORDERS_OPEN=false;
-function ordersOpen(){return ORDERS_OPEN=LIVE_PAY&&(PAY_MODE==='live'||!!(S&&S.user&&S.user.phone===TEST_PHONE))}
+function ordersOpen(){const b=typeof branch==='function'?branch():null;return ORDERS_OPEN=!!(b&&b.online)&&LIVE_PAY&&(PAY_MODE==='live'||!!(S&&S.user&&S.user.phone===TEST_PHONE))}
 // Cüzdan bakiyesi şimdilik cihazda tutulduğu için para yükleme sunucu tarafı hazır olana kadar kapalı.
 const TOPUP_OPEN=false;
 const telHref=t=>'tel:+90'+String(t).replace(/\D/g,'').replace(/^0/,'');

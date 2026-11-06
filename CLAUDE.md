@@ -23,4 +23,5 @@ Uygulamada "Powered by Lokus Studio" yazısı kalmalı.
 
 ## Kurallar
 - Secret'lar (API anahtarı, .p8, şifre) asla sohbete yazılmaz; kullanıcı GitHub secrets'a kendisi girer.
+- Online sipariş yalnızca `online:true` şubelerde (şu an Körfez) ve sunucuda TELEGRAM_CHATS içinde grubu olan şubede açılır.
 - Demo giriş: herhangi 5xx numara + kod 123456. iyzico sandbox test kartı 5528 7900 0000 0008, 12/30, 123, 3D 283126.
