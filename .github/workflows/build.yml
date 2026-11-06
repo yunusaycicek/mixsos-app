@@ -53,6 +53,7 @@ jobs:
             echo "iyzico secret'ları eksik, demo ödeme modunda kalınıyor."; exit 0
           fi
           PROJECT=mixsos--web-site
+          gcloud services enable cloudbilling.googleapis.com firebaseextensions.googleapis.com --project "$PROJECT" --quiet || true
           node ci/menu.mjs
           (cd functions && npm install --omit=dev --no-audit --no-fund)
           FB="npx --yes firebase-tools@14"
