@@ -6,11 +6,14 @@ Uygulamada "Powered by Lokus Studio" yazısı kalmalı.
 ## Yapı
 - `www/index.html` — uygulamanın tamamı (tek dosya, vanilla JS). Durum `localStorage` `mixsos.v2`.
   Menü (`P`, `DRINK`, `SOS`), şubeler (`BR`), şirket bilgisi (`COMPANY`), yasal metinler (`V.doc`).
-  `ORDERS_OPEN=false`: online ödeme canlıya alınana kadar sepet "Şubeyi Ara" gösterir.
+  `ordersOpen()`: ödeme sunucusu canlı (PAY_MODE live) ve şube `online:true` ise sipariş açık; sandbox'ta yalnızca
+  5000000000 test numarasına açık. Para yükleme (`TOPUP_OPEN`) kapalı.
 - `shell/index.html` — Capacitor kabuğu; içeriği jsDelivr CDN'den (gh-pages) çeker. `www`'ye yapılan
   değişiklik main'e push edilince uygulamaya mağaza güncellemesi olmadan gelir.
-- `functions/` — iyzico ödeme sunucusu (Firebase Cloud Functions, europe-west1). Henüz deploy edilmedi;
-  FIREBASE_SERVICE_ACCOUNT + IYZICO_API_KEY/SECRET_KEY secret'ları gerekiyor.
+- `functions/` — iyzico ödeme sunucusu (Firebase Cloud Functions v2 `api`, europe-west1, proje mixsos--web-site).
+  Siparişler Firestore `orders`'a yazılır, ödeme sonrası şubenin Telegram grubuna gider (@mixsos_siparis_bot).
+  `functions/.env`: IYZICO_BASE_URL (sandbox/live), TELEGRAM_CHATS. Secrets: IYZICO_API_KEY, IYZICO_SECRET_KEY,
+  TELEGRAM_BOT_TOKEN. GitHub→GCP girişi anahtarsız (Workload Identity, github-deploy SA).
 - `store/` — App Store metinleri/ekran görüntüleri (`metadata`, `screenshots`), Google Play görselleri (`play`).
 - `ci/` — ikon/açılış (`brand.py`, `brand_ios.py`), Play Gradle ayarları (`play_gradle.py`), Android yükleme anahtarı (`upload.p12`).
 
